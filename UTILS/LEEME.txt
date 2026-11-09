@@ -1,0 +1,1 @@
+Coloca aquí gswin64c.exe y ocrmypdf.exe

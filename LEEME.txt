@@ -1,0 +1,50 @@
+PDF Tool v2.0.4
+===============
+Servicio de Informática — CIS Guillermo Miranda — Murcia
+
+ARCHIVOS NECESARIOS
+-------------------
+La aplicación necesita la carpeta UTILS junto al .exe con la siguiente estructura:
+
+  pdftool.exe
+  LEEME.txt
+  UTILS\
+    gs\
+      bin\
+        gswin64c.exe
+        gsdll64.dll
+        VCRUNTIME140.dll       <- necesario en equipos sin Visual C++ instalado
+        VCRUNTIME140_1.dll     <- idem
+        MSVCP140.dll           <- idem
+    tesseract\
+      tesseract.exe
+      tessdata\
+        spa.traineddata
+
+Si falta la carpeta UTILS o los ejecutables, las operaciones de
+Combinar, Comprimir, OCR y Extraer no funcionarán.
+
+PROBLEMA: "Can't load Ghostscript DLL"
+---------------------------------------
+Si aparece este error, el equipo no tiene instalado el
+Visual C++ Redistributable de Microsoft.
+
+Solución A — Instalar el redistribuible:
+  https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+Solución B — Copiar las DLLs desde un equipo donde funcione:
+  Copiar de C:\Windows\System32\ al directorio UTILS\gs\bin\ :
+    - VCRUNTIME140.dll
+    - VCRUNTIME140_1.dll
+    - MSVCP140.dll
+
+MANUAL
+------
+El manual de usuario está disponible en:
+  P:\APPS\PDFTOOLS\manual_pdftool_v2.0.1.html
+  (abrir con cualquier navegador)
+
+CONTACTO
+--------
+Servicio de Informática
+CIS Guillermo Miranda — Murcia
