@@ -1,5 +1,103 @@
 # Changelog — PDF Tool
 
+## 3.11.1
+Repaso visual (sin cambios de funcionamiento):
+- Etiquetas de los formularios alineadas a la izquierda («Texto» en Marca de agua; «Nombre del perfil» y «Añadir al nombre» en Lotes); salían centradas.
+- Marca de agua: el botón para quitar cada archivo ya no sale con el aspecto gris por defecto de Windows.
+- Marca de agua y Rellenar formulario: el texto de la vista previa va debajo de la imagen (antes quedaba estrujado a la derecha).
+- Firmar: «Buscar de nuevo» con el estilo de botón secundario.
+- Atajos de teclado: la descripción a la izquierda y las teclas a la derecha.
+- Acerca de: título normal y botones de tamaño estándar.
+- El botón de la zona de soltar se ve desactivado cuando no se puede usar (p. ej. Office a PDF sin Office).
+
+## 3.11.0
+- **Lotes: nuevo paso «Convertir Word/Excel/PowerPoint a PDF»** (siempre el primero), con las mismas opciones de Excel, PowerPoint y PDF/A. Permite, por ejemplo, convertir una carpeta de informes de Word, firmarlos e imprimirlos de una vez.
+  - La carpeta de origen lista también los documentos de Office (sin los archivos temporales «~$» que crea Office) y avisa si el perfil no los convierte, con un botón para añadir el paso.
+  - Opción «Procesar solo los documentos de Office» para no reprocesar los PDF que ya hubiera en la carpeta.
+  - Nuevo perfil de ejemplo «Word/Excel/PowerPoint a PDF y firmar» (también se añade a quien ya tenía perfiles guardados).
+  - Los documentos de Office soltados sobre Lotes se quedan en Lotes.
+
+## 3.10.0
+- **Nueva herramienta «Office a PDF»** (Optimizar y convertir): convierte documentos de Word, Excel y PowerPoint con el Microsoft Office instalado en el equipo, con el mismo resultado que «Guardar como PDF».
+  - Detecta la versión de Office y la muestra (2010, 2013, 2016, 2019, 2021, 2024 o Microsoft 365); desactiva las opciones que esa versión no admite.
+  - Word: marcadores desde los títulos. Excel: todo el libro u hoja activa y «ajustar a una página de ancho». PowerPoint: diapositivas, páginas de notas o documento con 2, 3 o 6 por hoja.
+  - PDF/A (Word y PowerPoint), guardar junto al documento o en otra carpeta, y unir todo en un solo PDF.
+  - Seguro: trabaja sobre una copia en solo lectura, con Office invisible y las macros desactivadas; salta los documentos con contraseña; si Office no responde en 2 minutos cierra solo el proceso de esa conversión.
+  - Los documentos de Office soltados en cualquier parte de la ventana van directamente a esta herramienta.
+- Listas de archivos (Comprimir, OCR, Office…): las flechas ↑↓ van en horizontal; cada fila es más baja y se ven 4 archivos en vez de 2.
+- Automatización COM directa desde Rust (sin PowerShell ni VBScript, que suelen estar bloqueados por directiva).
+
+## 3.9.1
+- **Nuevo icono de la aplicación** («Etiqueta PDF»: hoja blanca con banda roja PDF sobre fondo azul marino). Se ve en el .exe, la barra de tareas, la cabecera de la app y «Acerca de». En tamaños muy pequeños (16–24 px) se usa una versión simplificada sin texto para que siga siendo reconocible.
+
+## 3.9.0
+**¿Acepta PDF esta impresora?** Al elegir «Envío directo» en el panel Imprimir, la app pregunta a la impresora por la red:
+- Primero por **IPP** (el protocolo de impresión estándar, puerto 631: formatos que admite) y, si no responde, por **SNMP** (lenguajes instalados según el Printer-MIB). Conexiones directas y breves, sin pasar por el proxy.
+- La dirección se averigua sola a partir del puerto de Windows (puerto TCP/IP estándar o URL IPP). Si la impresora está compartida por un servidor, conectada por WSD o por USB, se explica el motivo y se puede **escribir su IP** para comprobarla.
+- El resultado se muestra en el panel (Acepta PDF / No acepta PDF / No se ha podido comprobar, con los formatos o lenguajes que indica) y se recuerda para cada impresora. Se puede volver a comprobar.
+- Si la impresora dice que **no** acepta PDF, se pide confirmación antes de enviarlo de forma directa y se ofrece volver a «Automático».
+- Pruebas automáticas contra impresoras simuladas y comprobado con un servidor CUPS y un agente net-snmp reales.
+
+Otros:
+- Los diálogos de confirmación que no borran nada ya no muestran el icono de papelera.
+
+## 3.8.1
+- Corregido: en el menú contextual de Organizar (clic derecho), la opción «Eliminar» no se veía (texto rojo sobre fondo rojo).
+
+## 3.8.0
+Impresión:
+- Paso **«Imprimir» en Lotes**: impresora, copias, doble cara, color y marca solo en la copia impresa. Puede ir después de la firma (imprime el PDF ya firmado). Si falla, el archivo se guarda igualmente y el resultado lo indica.
+- **Imprimir selección**: en Organizar, con páginas seleccionadas, el botón Imprimir (y el menú contextual) propone imprimir solo esas páginas.
+- **Solo en la copia impresa**: marca de agua (p. ej. «COPIA») y/o «Impreso el … a las …» al pie, sin modificar el archivo.
+
+Código y mantenimiento:
+- `App.tsx` pasa de ~2.500 a ~950 líneas: Combinar, Extraer, Dividir, Comprimir, OCR e Imágenes están en `src/herramientas/`, cada una con su estado. Eliminadas las tarjetas antiguas «Reordenar» y «Anotar», que ya no eran accesibles (sustituidas por el visor).
+- Una sola hoja de estilos (`estilos.css`) en lugar de cuatro, con el mismo aspecto, sin las reglas de elementos que ya no existen.
+- Política de seguridad del contenido (CSP) activada: la interfaz solo puede cargar sus propios archivos y comunicarse con la app.
+- Pruebas automáticas: 17 de utilidades (Vitest, `npm test`) y 5 de impresión en Rust.
+- `bump-version.ps1` actualiza también `package-lock.json` y no compila si fallan tipos, ESLint o pruebas.
+- Sin avisos de compilación en Rust.
+- Al cerrar, la app avisa también si hay cambios sin guardar en el visor (antes solo lo hacía para la tarjeta antigua de Reordenar).
+
+Documentación:
+- Manual integrado reescrito para la 3.8.0 (antes era de la 2.0.10): visor, firma y validación, todas las herramientas, Lotes, impresión, atajos y preguntas frecuentes.
+- `LEEME.txt` y `UTILS\LEEME.txt` actualizados; eliminados los manuales antiguos de la raíz.
+
+## 3.7.0
+**Imprimir** (Ctrl+P, botón «Imprimir» del visor, tarjeta de resultado, menú Archivo y Ctrl+K):
+- Panel propio: impresora (lista de Windows, con la predeterminada marcada), copias e intercalado, todas las páginas o un rango («1-3, 5»), doble cara (borde largo/corto), color o blanco y negro, páginas por hoja (1-16) y orientación. Recuerda los últimos ajustes.
+- Motor por defecto: el de PDF de WebView2 (Edge), ya incluido en Windows. Imprime en vectorial, con texto nítido y trabajos ligeros, sin instalar nada.
+- Respaldo automático si falla: SumatraPDF (si se copia en `UTILS\sumatra\SumatraPDF.exe`) y, por último, Ghostscript. Si la impresora no responde en 5 minutos no se reintenta, para no imprimir dos veces.
+- «Envío directo» (opciones avanzadas, se recuerda por impresora): manda el PDF tal cual con cabecera PJL (copias, doble cara, color) a impresoras que interpretan PDF. Es instantáneo.
+- «Diálogo de Windows…»: abre el documento con el diálogo de impresión del sistema (bandejas, grapado, preferencias del driver).
+- Si el documento del visor tiene cambios sin aplicar, se avisa de que se imprime la versión guardada.
+
+Correcciones:
+- **La 3.5.0 no compilaba en Windows**: el paso «Firmar» de Lotes guardaba el certificado mientras esperaba a los demás pasos (error de préstamo y de envío entre hilos). Ahora la firma del lote se hace al final, en un hilo propio y abriendo el certificado una sola vez.
+- Escape no cerraba «Acerca de» ni el Manual.
+- Si no se podía abrir la carpeta de resultados tras un lote (Comprimir, OCR…), el error se perdía; ahora queda en el registro.
+- La ventana principal cierra la aplicación aunque quede abierta una ventana de impresión.
+
+Desarrollo:
+- ESLint 9 configurado (`npm run lint`: TypeScript y reglas de hooks de React), sin avisos.
+
+## 3.6.0
+Mejoras de interfaz y usabilidad (sin cambios en el procesamiento de PDF):
+- Más espacio para el documento: se quita el pie (Ver log · Manual · Acerca de · Donar), que ya estaba en el menú Ayuda; el visor gana todo el alto de la ventana.
+- Cabecera más baja y limpia: fuera las versiones de Ghostscript/Tesseract y la versión duplicada; nuevo botón «Buscar… Ctrl K» visible.
+- Barra de estado útil: último mensaje de actividad (clic → log completo), estado de los componentes (aviso «Falta Ghostscript» con clic para abrir UTILS) y versión (clic → Acerca de).
+- Menú lateral: etiquetas en una línea, contador de archivos en espera (Combinar, Comprimir, OCR, Imágenes), punto animado en la herramienta que está trabajando y botón «Contraer menú» con icono. En ventanas estrechas se compacta solo.
+- Firmar, Anotar y Organizar más fáciles de encontrar: accesos directos en la portada, en el menú Herramientas y en Ctrl+K (si no hay PDF abierto, lo pide y entra directamente en ese modo). Ctrl+K también busca en los recientes.
+- Combinar: ya no aparece un diálogo para borrar los originales tras cada combinación; ahora es un botón opcional «Borrar originales» en la tarjeta de resultado, con confirmación.
+- Resultado: un solo aviso por operación (tarjeta de resultado en las herramientas; aviso flotante solo en el visor). Las acciones de borrar quedan separadas a la derecha.
+- Registro de actividad con el estilo del tema (antes, bloque negro) y oculto mientras no hay actividad.
+- Botones de acción: secundarios a la izquierda y el principal a la derecha con su ancho natural.
+- Extraer páginas: el campo de rango aparece al elegir el archivo, con etiqueta.
+- OCR: selector de resolución con etiqueta y explicación (Rápido / Recomendado / Máxima calidad); «Corregir orientación» explicado.
+- Imágenes a PDF: selector «Un único PDF / Un PDF por imagen» en lugar de dos casillas que actuaban como opción única; corregido el texto duplicado de formatos.
+- La barra de pestañas del visor solo aparece cuando hay documentos abiertos; las barras del visor ya no parten los botones en dos líneas.
+- Etiquetas más cortas: «Marca de agua», «Metadatos», «Lotes».
+
 ## 3.5.0
 - Marca de agua (texto, tamaño, opacidad, color, ángulo) y numeración de páginas (formato, posición, rango) con vista previa. Respeta páginas giradas y recortadas.
 - Tachar de verdad (herramienta «Tachar» en Anotar): las páginas afectadas se convierten en imagen con el recuadro negro, por lo que el texto tapado desaparece del archivo. También se eliminan anotaciones y metadatos de esas páginas.

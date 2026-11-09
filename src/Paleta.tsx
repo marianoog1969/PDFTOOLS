@@ -21,7 +21,7 @@ export default function Paleta({ items, cerrar }: { items: ItemPaleta[]; cerrar:
   return (
     <div className="paleta-fondo" onMouseDown={cerrar}>
       <div className="paleta" onMouseDown={(e) => e.stopPropagation()}>
-        <input autoFocus placeholder="Busca una herramienta o acción…" value={q} onChange={(e) => setQ(e.target.value)}
+        <input autoFocus placeholder="Busca una herramienta, acción o archivo reciente…" value={q} onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Escape") cerrar();
             else if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(filtrados.length - 1, s + 1)); }

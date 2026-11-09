@@ -4,6 +4,7 @@ import VisorPdf from "./VisorPdf";
 import AnotadorPdf, { type Anot } from "./AnotadorPdf";
 import FirmaPdf from "./FirmaPdf";
 import { I } from "./Icono";
+import { aRango } from "./util";
 import { avisar, confirmar } from "./Avisos";
 
 interface InfoPdf { paginas: number; protegido: boolean; corrupto: boolean; error?: string; tamano_bytes: number; }
@@ -46,7 +47,8 @@ interface Props {
   alAbrir: (ruta: string) => void;           // se llama al abrir una pestaña (para «recientes»)
   abrirReciente: (ruta: string) => void;
   borrarRecientes: () => void;
-  alEstado?: (e: { nombre: string; paginas: number; cambios: boolean; modo: string } | null) => void;
+  alEstado?: (e: { ruta: string; nombre: string; paginas: number; cambios: boolean; modo: string } | null) => void;
+  imprimir?: (ruta: string, conCambios: boolean, paginas?: string) => void;
 }
 
 interface Acierto { pagina: number; cuenta: number; fragmento: string; }
@@ -79,6 +81,7 @@ export default function Visor(P: Props) {
   const docsRef = useRef<Doc[]>([]);
   docsRef.current = docs;
   const activaRef = useRef<string | null>(null);
+  const modoPendiente = useRef<Modo | null>(null);
   activaRef.current = activa;
 
   const doc = docs.find((d) => d.ruta === activa) ?? null;
@@ -425,7 +428,7 @@ export default function Visor(P: Props) {
   const busq = doc ? busquedas[doc.ruta] : undefined;
 
   useEffect(() => {
-    P.alEstado?.(doc ? { nombre: P.nombreArchivo(doc.ruta), paginas: doc.paginas.length, cambios: hayCambios(doc) || doc.anot.length > 0, modo: doc.modo } : null);
+    P.alEstado?.(doc ? { ruta: doc.ruta, nombre: P.nombreArchivo(doc.ruta), paginas: doc.paginas.length, cambios: hayCambios(doc) || doc.anot.length > 0, modo: doc.modo } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.ruta, doc?.paginas.length, doc?.anot.length, doc?.modo, doc && hayCambios(doc)]);
   useEffect(() => {
@@ -434,21 +437,43 @@ export default function Visor(P: Props) {
       if (a === "cerrar" && activa) cerrar(activa);
       else if (a === "deshacer" && doc) deshacer();
       else if (a === "rehacer" && doc) rehacer();
+      else if (a.startsWith("modo:")) irAModo(a.slice(5) as Modo);
     };
     window.addEventListener("pdftool-visor", f); return () => window.removeEventListener("pdftool-visor", f);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   });
+
+  /** Páginas seleccionadas en Organizar, como rango del archivo guardado (sin las páginas en blanco ni las de otros PDF). */
+  function rangoSeleccion(): string | undefined {
+    if (!doc || doc.modo !== "organizar" || !doc.sel.length) return undefined;
+    const nums = doc.paginas.filter((p) => doc.sel.includes(p.id) && p.origen != null && !p.fuente).map((p) => p.origen as number);
+    return nums.length ? aRango(nums) : undefined;
+  }
+
+  // Ir a un modo (Firmar, Anotar…). Sin documento abierto, pide el PDF y entra en ese modo al abrirlo.
+  function irAModo(m: Modo) {
+    if (doc) { upd(doc.ruta, (d) => ({ ...d, modo: m })); return; }
+    modoPendiente.current = m; P.abrirDialogo();
+  }
+  useEffect(() => {
+    if (doc && modoPendiente.current) { const m = modoPendiente.current; modoPendiente.current = null; upd(doc.ruta, (d) => ({ ...d, modo: m })); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.ruta]);
 
   // ── Pantalla de inicio ───────────────────────────────────────
   if (!doc) {
     return (
       <div className="visor-ws">
-        <TabBar tabDestino={tabDestino} docs={docs} activa={activa} setActiva={setActiva} cerrar={cerrar} abrir={P.abrirDialogo} nombre={P.nombreArchivo} />
+        {docs.length > 0 && <TabBar tabDestino={tabDestino} docs={docs} activa={activa} setActiva={setActiva} cerrar={cerrar} abrir={P.abrirDialogo} nombre={P.nombreArchivo} />}
         <div className="inicio">
           <div className="inicio-hero">
             <h2>{saludo()}</h2>
             <p className="inicio-sub">¿Qué quieres hacer con tus PDF?</p>
-            <button className="primario azul inicio-abrir" onClick={P.abrirDialogo} disabled={bloqueado}>Abrir PDF…</button>
+            <div className="inicio-acciones">
+              <button className="primario azul inicio-abrir" onClick={P.abrirDialogo} disabled={bloqueado}><I n="file" s={17} /> Abrir PDF…</button>
+              <button className="secundario inicio-rapida" onClick={() => irAModo("firmar")} disabled={bloqueado}><I n="lock" s={15} /> Firmar</button>
+              <button className="secundario inicio-rapida" onClick={() => irAModo("anotar")} disabled={bloqueado}><I n="highlight" s={15} /> Anotar</button>
+              <button className="secundario inicio-rapida" onClick={() => irAModo("organizar")} disabled={bloqueado}><I n="pages2" s={15} /> Organizar páginas</button>
+            </div>
             <div className="inicio-ayuda">También puedes arrastrar archivos a la ventana · <kbd>Ctrl</kbd>+<kbd>K</kbd> busca cualquier herramienta</div>
           </div>
           {P.recientes.length > 0 && (
@@ -496,6 +521,8 @@ export default function Visor(P: Props) {
           </button>
         ))}
         <span className="visor-espacio" />
+        {P.imprimir && <button className="ws-imprimir" onClick={() => P.imprimir!(doc.ruta, cambios || doc.anot.length > 0, rangoSeleccion())} disabled={bloqueado}
+          title={rangoSeleccion() ? `Imprimir las páginas seleccionadas: ${rangoSeleccion()} (Ctrl+P)` : "Imprimir (Ctrl+P)"}><I n="printer" s={16} /> {rangoSeleccion() ? "Imprimir selección" : "Imprimir"}</button>}
         <form className="ws-buscar" onSubmit={(e) => { e.preventDefault(); buscar(); }}>
           <input value={consulta} onChange={(e) => setConsulta(e.target.value)} placeholder="Buscar texto en el documento…" onFocus={() => busq && setPanelBusqueda(true)} />
           <button type="submit" disabled={!consulta.trim() || busq?.cargando}>{busq?.cargando ? "…" : "Buscar"}</button>
@@ -639,6 +666,7 @@ export default function Visor(P: Props) {
                   ["⧉ Duplicar", duplicar],
                   ["Insertar página en blanco después", blanca],
                   ["⤓ Extraer a PDF nuevo", extraerSeleccion],
+                  ...(P.imprimir && rangoSeleccion() ? [["Imprimir selección…", () => P.imprimir!(doc.ruta, cambios || doc.anot.length > 0, rangoSeleccion())]] : []),
                   ["Eliminar", eliminar],
                 ] as [string, () => void][]).map(([t, f]) => (
                   <button key={t} className={t === "Eliminar" ? "peligro" : ""} onClick={() => { setMenu(null); f(); }}>{t}</button>

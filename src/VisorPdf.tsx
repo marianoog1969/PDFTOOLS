@@ -39,8 +39,10 @@ export default function VisorPdf({ ruta, total, modo, minis: minisExt, marcadas,
   const activaRef = useRef<HTMLButtonElement | null>(null);
 
   // Miniaturas: una sola llamada por archivo
+  // Solo importa si las miniaturas vienen de fuera o no, no su contenido: así no se recargan en cada render.
+  const hayMinisExt = !!minisExt;
   useEffect(() => {
-    if (minisExt) { setActual(1); setImg(null); setError(null); return; }
+    if (hayMinisExt) { setActual(1); setImg(null); setError(null); return; }
     let vivo = true;
     setMinis([]); setActual(1); setImg(null); setError(null); setCargandoMinis(true);
     invoke<string[]>("miniaturas_visor", { entrada: ruta, dpi: 36 })
@@ -48,7 +50,7 @@ export default function VisorPdf({ ruta, total, modo, minis: minisExt, marcadas,
       .catch((e) => { if (vivo) setError(String(e)); })
       .finally(() => { if (vivo) setCargandoMinis(false); });
     return () => { vivo = false; };
-  }, [ruta, !!minisExt]);
+  }, [ruta, hayMinisExt]);
 
   // Tamaño disponible de la hoja (para «ajustar a ancho / página»)
   useEffect(() => {

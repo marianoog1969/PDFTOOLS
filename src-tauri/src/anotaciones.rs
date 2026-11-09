@@ -129,7 +129,7 @@ pub fn aplicar(entrada: &str, salida: &str, anotaciones: &[Anotacion]) -> Result
             Some(Object::Dictionary(d)) => d,
             _ => Dictionary::new(),
         };
-        let mut sub = |clave: &[u8], nombre: &[u8], valor: Object, recursos: &mut Dictionary, doc: &Document| {
+        let sub = |clave: &[u8], nombre: &[u8], valor: Object, recursos: &mut Dictionary, doc: &Document| {
             let mut d = match recursos.get(clave).ok().map(|o| resolver(doc, o).clone()) {
                 Some(Object::Dictionary(d)) => d,
                 _ => Dictionary::new(),

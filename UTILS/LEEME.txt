@@ -1,1 +1,10 @@
-Coloca aquí gswin64c.exe y ocrmypdf.exe
+Carpeta UTILS de PDF Tool
+=========================
+
+Copia aqui las carpetas de instalacion COMPLETAS (no solo el .exe):
+
+  gs\          Ghostscript  -> gs\bin\gswin64c.exe   (obligatorio)
+  tesseract\   Tesseract    -> tesseract\tesseract.exe y tessdata\spa.traineddata  (para OCR)
+  sumatra\     SumatraPDF   -> sumatra\SumatraPDF.exe (opcional, respaldo para imprimir)
+
+Detalles y enlaces de descarga en el LEEME.txt de la carpeta del programa y en README.md.

@@ -1,6 +1,6 @@
 # PDF Tool
 
-Tauri 2 + Rust + React/TS. Combinar, comprimir y aplicar OCR a PDFs.
+Tauri 2 + Rust + React/TS. Visor, organizar, anotar, firmar, combinar, comprimir, OCR, imprimir y lotes de PDF.
 OCR implementado con Ghostscript (rasteriza) + Tesseract (reconoce texto)
 + lopdf (combina las páginas), sin Python ni ocrmypdf de por medio.
 
@@ -82,6 +82,28 @@ Si más adelante necesitas más idiomas, basta con añadir el `.traineddata`
 correspondiente dentro de `UTILS\tesseract\tessdata\` y cambiar el código
 (`-l spa` en `src-tauri/src/lib.rs`, función `ejecutar_ocr`) por el idioma
 que toque, o por varios combinados con `+` (p. ej. `spa+eng`).
+
+### 3. SumatraPDF (opcional, para imprimir)
+La impresión funciona sin nada más: usa el motor de PDF de WebView2 y, si falla, Ghostscript.
+Si quieres un respaldo intermedio, descarga la versión **portable** de SumatraPDF
+(https://www.sumatrapdfreader.org) y deja el ejecutable en `UTILS\sumatra\SumatraPDF.exe`.
+
+## Comprobaciones antes de compilar
+`bump-version.ps1` las ejecuta solas y no compila si alguna falla:
+```
+npx tsc --noEmit      # tipos
+npm run lint          # ESLint (TypeScript + hooks de React)
+npm test              # pruebas de las utilidades (Vitest)
+```
+Pruebas de Rust (impresión y comprobación de impresoras): `cargo test --manifest-path src-tauri/Cargo.toml -- imprimir sondeo`.
+
+## Estructura del código
+- `src/App.tsx`: ventana, menús, lateral, diálogos comunes y barra de estado.
+- `src/herramientas/`: Combinar, Extraer, Dividir, Comprimir, OCR, Imágenes y Office (cada una con su estado); `comun.tsx` reúne lo compartido.
+- `src/Visor.tsx` (+ `FirmaPdf`, `AnotadorPdf`, `VisorPdf`): visor en pestañas con Leer / Organizar / Anotar / Firmar.
+- `src/MarcaPdf`, `FormularioPdf`, `MetadatosPdf`, `LotesPdf`, `ImprimirDialogo`: resto de herramientas.
+- `src/estilos.css`: hoja de estilos única. `src/util.ts`: utilidades puras (probadas en `src/__tests__`).
+- `src-tauri/src/`: comandos Rust (`lib.rs`), firma (`firma.rs`, `validar.rs`, `ltv.rs`), edición (`edicion.rs`, `organizar.rs`, `anotaciones.rs`), imágenes (`imagen_pdf.rs`) impresión (`imprimir.rs`) y comprobación de si una impresora acepta PDF por IPP/SNMP (`sondeo.rs`).
 
 ## Calidad del OCR
 

@@ -1,7 +1,6 @@
 use lopdf::Document;
 use serde::Serialize;
 use std::fs;
-use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -20,6 +19,9 @@ mod validar;
 mod ltv;
 mod edicion;
 mod organizar;
+mod imprimir;
+mod sondeo;
+mod office;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -1833,15 +1835,19 @@ async fn vista_previa_formulario(entrada: String, valores: std::collections::Has
 
 /// Lista los PDF de una carpeta (opcionalmente con subcarpetas), ordenados. `excluir`: carpeta que no se recorre (la de salida).
 #[tauri::command]
-fn listar_pdfs_carpeta(ruta: String, recursivo: bool, excluir: Option<String>) -> Result<Vec<String>, String> {
-    fn rec(dir: &std::path::Path, recursivo: bool, excl: &Option<PathBuf>, v: &mut Vec<String>, prof: u32) {
+fn listar_pdfs_carpeta(ruta: String, recursivo: bool, excluir: Option<String>, office: Option<bool>) -> Result<Vec<String>, String> {
+    fn rec(dir: &std::path::Path, recursivo: bool, excl: &Option<PathBuf>, office: bool, v: &mut Vec<String>, prof: u32) {
         let Ok(rd) = fs::read_dir(dir) else { return };
         for e in rd.flatten() {
             let p = e.path();
             if p.is_dir() {
-                if recursivo && prof < 12 && excl.as_ref().map(|x| x != &p).unwrap_or(true) { rec(&p, recursivo, excl, v, prof + 1); }
+                if recursivo && prof < 12 && excl.as_ref().map(|x| x != &p).unwrap_or(true) { rec(&p, recursivo, excl, office, v, prof + 1); }
             } else if p.extension().map(|x| x.to_string_lossy().eq_ignore_ascii_case("pdf")).unwrap_or(false) {
                 v.push(p.to_string_lossy().into_owned());
+            } else if office && office::tipo_de(&p).is_some() {
+                // «~$Informe.docx» es el archivo de bloqueo que crea Office mientras el documento está abierto
+                let nombre = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                if !nombre.starts_with("~$") { v.push(p.to_string_lossy().into_owned()); }
             }
         }
     }
@@ -1849,7 +1855,7 @@ fn listar_pdfs_carpeta(ruta: String, recursivo: bool, excluir: Option<String>) -
     if !base.is_dir() { return Err("La carpeta no existe.".into()); }
     let excl = excluir.filter(|e| !e.trim().is_empty()).map(PathBuf::from);
     let mut v = vec![];
-    rec(&base, recursivo, &excl, &mut v, 0);
+    rec(&base, recursivo, &excl, office.unwrap_or(false), &mut v, 0);
     v.sort_by_key(|s| s.to_lowercase());
     Ok(v)
 }
@@ -1857,16 +1863,20 @@ fn listar_pdfs_carpeta(ruta: String, recursivo: bool, excluir: Option<String>) -
 #[derive(serde::Deserialize, Clone)]
 #[serde(tag = "tipo", rename_all = "snake_case")]
 enum Paso {
+    /// Word, Excel o PowerPoint → PDF con el Office instalado. Siempre el primer paso; los PDF lo pasan sin cambios.
+    Convertir { opciones: office::Opciones },
     Comprimir { nivel: String },
     Ocr { idioma: String },
     Decorar { decorado: edicion::Decorado },
     Metadatos { opciones: edicion::LimpiarMeta },
     Aplanar,
     Firmar { opciones: firma::Opciones },
+    /// Imprime el PDF tal como está en ese punto de la cadena (no lo modifica). Puede ir después de la firma.
+    Imprimir { ajustes: imprimir::Ajustes },
 }
 
 #[derive(serde::Serialize)]
-struct ResultadoLote { entrada: String, salida: String, ok: bool, error: String, tamano_entrada: u64, tamano_salida: u64 }
+struct ResultadoLote { entrada: String, salida: String, ok: bool, error: String, tamano_entrada: u64, tamano_salida: u64, aviso: String }
 
 fn destino_lote(entrada: &str, base: &Option<String>, carpeta: &str, sufijo: &str) -> PathBuf {
     let ent = PathBuf::from(entrada);
@@ -1884,13 +1894,283 @@ fn destino_lote(entrada: &str, base: &Option<String>, carpeta: &str, sufijo: &st
 }
 
 /// Aplica una secuencia de pasos a cada PDF y guarda el resultado en `carpeta_salida`.
+// ═══════════════════════════════ IMPRESIÓN ═══════════════════════════════
+
+#[tauri::command]
+fn listar_impresoras() -> Result<Vec<imprimir::Impresora>, String> {
+    #[cfg(windows)]
+    { imprimir::win::listar() }
+    #[cfg(not(windows))]
+    { Ok(vec![]) }
+}
+
+#[derive(Serialize)]
+struct InfoImpresion { sumatra: bool }
+
+#[tauri::command]
+fn info_impresion() -> InfoImpresion { InfoImpresion { sumatra: ruta_util("sumatra/SumatraPDF.exe").is_ok() } }
+
+/// ¿Acepta PDF esta impresora? Pregunta por IPP y SNMP. Con `direccion` (escrita por el usuario) no hace falta
+/// averiguarla a partir de la configuración de Windows.
+#[tauri::command]
+async fn sondear_impresora(impresora: String, direccion: Option<String>) -> Result<sondeo::Sondeo, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Some(d) = direccion.as_deref().map(str::trim).filter(|d| !d.is_empty()) { return sondeo::sondear_direccion(d); }
+        #[cfg(windows)]
+        {
+            match imprimir::win::direccion(&impresora) {
+                Ok(d) => sondeo::sondear_direccion(&d),
+                Err(motivo) => sondeo::Sondeo { pide_direccion: true, ..sondeo::Sondeo::desconocido(format!("{motivo} Si sabes su dirección IP, escríbela para comprobarla."), "") },
+            }
+        }
+        #[cfg(not(windows))]
+        { let _ = &impresora; sondeo::Sondeo { pide_direccion: true, ..sondeo::Sondeo::desconocido("Escribe la dirección IP de la impresora para comprobarla.", "") } }
+    }).await.map_err(|e| e.to_string())
+}
+
+/// Fallo de un método de impresión. `reintentable = false` si pudo llegar a imprimirse algo
+/// (p. ej. tiempo agotado): entonces no se prueba otro método, para no imprimir dos veces.
+struct FalloImpresion { msg: String, reintentable: bool }
+impl From<String> for FalloImpresion { fn from(msg: String) -> Self { FalloImpresion { msg, reintentable: true } } }
+
+#[cfg(windows)]
+static VENTANAS_IMPRESION: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+/// Abre el PDF en una ventana WebView2 propia y espera a que termine de cargar.
+/// `dialogo = false`: ventana fuera de pantalla, sin barra de tareas (impresión directa con ajustes).
+#[cfg(windows)]
+async fn ventana_pdf(app: &tauri::AppHandle, ruta: &str, dialogo: bool) -> Result<tauri::WebviewWindow, String> {
+    use std::sync::mpsc;
+    let url = tauri::Url::from_file_path(ruta).map_err(|_| "Ruta de archivo no válida.".to_string())?;
+    let label = format!("imprimir-{}", VENTANAS_IMPRESION.fetch_add(1, Ordering::SeqCst));
+    let (tx, rx) = mpsc::channel::<()>();
+    let tx = Arc::new(Mutex::new(Some(tx)));
+    let nombre = PathBuf::from(ruta).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let mut b = tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::External(url))
+        .title(format!("Imprimir — {nombre}"))
+        .on_page_load(move |_w, p| {
+            if p.event() == tauri::webview::PageLoadEvent::Finished {
+                if let Some(t) = tx.lock().ok().and_then(|mut g| g.take()) { let _ = t.send(()); }
+            }
+        });
+    b = if dialogo {
+        b.inner_size(960.0, 760.0).center().focused(true)
+    } else {
+        // visible pero fuera de pantalla: así WebView2 sí dibuja el documento
+        b.position(-32000.0, -32000.0).inner_size(800.0, 1000.0).skip_taskbar(true).decorations(false).focused(false)
+    };
+    let win = b.build().map_err(|e| format!("No se pudo preparar la impresión: {e}"))?;
+    let cargado = tauri::async_runtime::spawn_blocking(move || rx.recv_timeout(std::time::Duration::from_secs(25)).is_ok())
+        .await.unwrap_or(false);
+    if !cargado { let _ = win.destroy(); return Err("El documento tardó demasiado en abrirse en WebView2.".into()); }
+    // el visor de PDF de WebView2 termina de montarse un poco después del evento de carga
+    tauri::async_runtime::spawn_blocking(|| std::thread::sleep(std::time::Duration::from_millis(1500))).await.ok();
+    Ok(win)
+}
+
+#[cfg(windows)]
+async fn imprimir_por_webview(app: &tauri::AppHandle, ruta: &str, aj: &imprimir::Ajustes) -> Result<Vec<String>, FalloImpresion> {
+    use std::sync::mpsc;
+    let win = ventana_pdf(app, ruta, false).await?;
+    let (tx, rx) = mpsc::channel::<Result<(), String>>();
+    let (aj2, tx_err) = (aj.clone(), tx.clone());
+    let lanzado = win.with_webview(move |wv| {
+        if let Err(e) = imprimir::win::imprimir_webview(&wv, &aj2, tx) { let _ = tx_err.send(Err(e)); }
+    });
+    if let Err(e) = lanzado { let _ = win.destroy(); return Err(format!("WebView2 no disponible: {e}").into()); }
+    let r = tauri::async_runtime::spawn_blocking(move || rx.recv_timeout(std::time::Duration::from_secs(300)))
+        .await.map_err(|e| FalloImpresion::from(e.to_string()))?;
+    let _ = win.destroy();
+    match r {
+        Ok(Ok(())) => Ok(vec![]),
+        Ok(Err(e)) => Err(e.into()),
+        Err(_) => Err(FalloImpresion { msg: "La impresora no respondió en 5 minutos. Revisa la cola de impresión antes de volver a intentarlo.".into(), reintentable: false }),
+    }
+}
+
+fn avisos_no_admitidos(aj: &imprimir::Ajustes, metodo: &str) -> Vec<String> {
+    let mut no: Vec<&str> = vec![];
+    let (pjl, sumatra) = (metodo == "directo", metodo == "sumatra");
+    if aj.por_hoja > 1 { no.push("varias páginas por hoja"); }
+    if aj.orientacion != "auto" { no.push("orientación"); }
+    if !pjl && !sumatra && aj.doble_cara != "auto" { no.push("doble cara"); }
+    if !pjl && !sumatra && aj.color != "auto" { no.push("color"); }
+    if no.is_empty() { vec![] } else { vec![format!("Con {} no se aplica: {}. Se usa la configuración de la impresora.", imprimir::nombre_metodo(metodo), no.join(", "))] }
+}
+
+#[cfg(windows)]
+fn impresora_o_predeterminada(aj: &imprimir::Ajustes) -> Result<String, String> {
+    aj.impresora.clone().filter(|s| !s.trim().is_empty()).or_else(imprimir::win::predeterminada)
+        .ok_or_else(|| "No hay ninguna impresora predeterminada en Windows. Elige una impresora.".to_string())
+}
+
+/// Copia temporal con las páginas pedidas (o el original si son todas).
+fn preparar_paginas(ruta: &str, aj: &imprimir::Ajustes, dir: &std::path::Path) -> Result<String, String> {
+    if aj.paginas.trim().is_empty() { return Ok(ruta.to_string()); }
+    let total = Document::load(ruta).map_err(|e| format!("No se pudo abrir el PDF: {e}"))?.get_pages().len() as u32;
+    let nums = parsear_rango(&aj.paginas, total)?;
+    Ok(imprimir::subconjunto(ruta, &nums, total, dir)?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| ruta.to_string()))
+}
+
+#[cfg(windows)]
+fn imprimir_por_programa(metodo: &str, ruta: &str, aj: &imprimir::Ajustes) -> Result<Vec<String>, String> {
+    let impresora = impresora_o_predeterminada(aj)?;
+    let dir = dir_temp_local("imprimir");
+    let r = (|| -> Result<(), String> {
+        match metodo {
+            "directo" => {
+                let archivo = preparar_paginas(ruta, aj, &dir)?;
+                let pdf = fs::read(&archivo).map_err(|e| format!("No se pudo leer el PDF: {e}"))?;
+                let titulo = PathBuf::from(ruta).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "PDF".into());
+                imprimir::win::enviar_raw(&impresora, &titulo, &imprimir::trabajo_pjl(&pdf, aj))
+            }
+            "sumatra" => {
+                let exe = ruta_util("sumatra/SumatraPDF.exe").map_err(|_| "No está SumatraPDF en UTILS\\sumatra\\SumatraPDF.exe.".to_string())?;
+                let st = comando_silencioso(&exe)
+                    .args(["-print-to", &impresora, "-print-settings", &imprimir::ajustes_sumatra(aj), "-silent", ruta])
+                    .status().map_err(|e| format!("No se pudo ejecutar SumatraPDF: {e}"))?;
+                if st.success() { Ok(()) } else { Err("SumatraPDF no pudo imprimir el documento.".into()) }
+            }
+            "ghostscript" => {
+                let gs = ruta_util("gs/bin/gswin64c.exe")?;
+                let archivo = preparar_paginas(ruta, aj, &dir)?;
+                for _ in 0..aj.copias.clamp(1, 50) {
+                    let st = comando_gs(&gs)
+                        .args(["-dNOPAUSE", "-dBATCH", "-dQUIET", "-dNoCancel", "-dFitPage", "-sDEVICE=mswinpr2",
+                               &format!("-sOutputFile=%printer%{impresora}"), &archivo])
+                        .status().map_err(|e| format!("No se pudo ejecutar Ghostscript: {e}"))?;
+                    if !st.success() { return Err("Ghostscript no pudo imprimir el documento.".into()); }
+                }
+                Ok(())
+            }
+            _ => Err("Método de impresión desconocido.".into()),
+        }
+    })();
+    limpiar_dir_temp(&dir);
+    r.map(|_| avisos_no_admitidos(aj, metodo))
+}
+
+/// Imprime un PDF. En modo «auto» prueba WebView2 → SumatraPDF (si está) → Ghostscript.
+#[tauri::command]
+async fn imprimir_pdf(app: tauri::AppHandle, ruta: String, ajustes: imprimir::Ajustes) -> Result<imprimir::Resultado, String> {
+    imprimir_archivo(&app, &ruta, &ajustes).await
+}
+
+/// Lógica común de impresión (panel «Imprimir» y paso «Imprimir» de Lotes).
+async fn imprimir_archivo(app: &tauri::AppHandle, ruta: &str, ajustes: &imprimir::Ajustes) -> Result<imprimir::Resultado, String> {
+    if !std::path::Path::new(ruta).exists() { return Err("No se encuentra el archivo.".into()); }
+    #[cfg(not(windows))]
+    { let _ = (app, ajustes); Err("La impresión solo está disponible en Windows.".into()) }
+    #[cfg(windows)]
+    {
+        // Marca o pie solo en la copia impresa: se imprime una copia temporal decorada.
+        let dir_copia = dir_temp_local("impcopia");
+        let ruta_imp = match ajustes.decorado_copia() {
+            Some(d) => {
+                fs::create_dir_all(&dir_copia).map_err(|e| e.to_string())?;
+                let tmp = dir_copia.join(PathBuf::from(ruta).file_name().unwrap_or_default());
+                let (a, b) = (ruta.to_string(), tmp.to_string_lossy().into_owned());
+                let b2 = b.clone();
+                tauri::async_runtime::spawn_blocking(move || edicion::decorar(&a, &b2, &d)).await.map_err(|e| e.to_string())??;
+                b
+            }
+            None => ruta.to_string(),
+        };
+        let r = imprimir_con_metodos(app, &ruta_imp, ajustes).await;
+        limpiar_dir_temp(&dir_copia);
+        r
+    }
+}
+
+#[cfg(windows)]
+async fn imprimir_con_metodos(app: &tauri::AppHandle, ruta: &str, ajustes: &imprimir::Ajustes) -> Result<imprimir::Resultado, String> {
+    let hay_sumatra = ruta_util("sumatra/SumatraPDF.exe").is_ok();
+    let orden: Vec<&str> = match ajustes.metodo.as_str() {
+        "auto" => if hay_sumatra { vec!["webview", "sumatra", "ghostscript"] } else { vec!["webview", "ghostscript"] },
+        m => vec![m],
+    };
+    let mut fallos: Vec<String> = vec![];
+    for m in orden {
+        let r: Result<Vec<String>, FalloImpresion> = if m == "webview" {
+            imprimir_por_webview(app, ruta, ajustes).await
+        } else {
+            let (m2, ruta2, aj2) = (m.to_string(), ruta.to_string(), ajustes.clone());
+            tauri::async_runtime::spawn_blocking(move || imprimir_por_programa(&m2, &ruta2, &aj2))
+                .await.map_err(|e| e.to_string()).and_then(|x| x).map_err(FalloImpresion::from)
+        };
+        match r {
+            Ok(mut av) => {
+                let mut avisos = vec![];
+                if !fallos.is_empty() { avisos.push(format!("Se imprimió con {} porque antes falló: {}", imprimir::nombre_metodo(m), fallos.join(" · "))); }
+                avisos.append(&mut av);
+                return Ok(imprimir::Resultado { metodo: m.into(), avisos });
+            }
+            Err(f) => {
+                let nombre = imprimir::nombre_metodo(m);
+                let nombre = nombre[..1].to_uppercase() + &nombre[1..];
+                fallos.push(format!("{nombre}: {}", f.msg));
+                if !f.reintentable { break; }
+            }
+        }
+    }
+    Err(fallos.join("\n"))
+}
+
+/// Abre el PDF en una ventana y muestra el diálogo de impresión de Windows (bandejas, grapado, preferencias del driver…).
+#[tauri::command]
+async fn dialogo_impresion(app: tauri::AppHandle, ruta: String) -> Result<(), String> {
+    if !std::path::Path::new(&ruta).exists() { return Err("No se encuentra el archivo.".into()); }
+    #[cfg(not(windows))]
+    { let _ = &app; Err("La impresión solo está disponible en Windows.".into()) }
+    #[cfg(windows)]
+    {
+        let win = ventana_pdf(&app, &ruta, true).await?;
+        let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+        win.with_webview(move |wv| { let _ = tx.send(imprimir::win::dialogo_sistema(&wv)); }).map_err(|e| e.to_string())?;
+        let r = tauri::async_runtime::spawn_blocking(move || rx.recv_timeout(std::time::Duration::from_secs(20)).unwrap_or(Ok(())))
+            .await.map_err(|e| e.to_string())?;
+        if r.is_err() { let _ = win.destroy(); }
+        r
+    }
+}
+
+/// Firma (en un único hilo, abriendo el certificado una vez) los PDF intermedios de un lote.
+/// Si no se puede abrir el certificado, todos quedan con ese error.
+fn firmar_pendientes_lote(opciones: &firma::Opciones, pend: &[(usize, PathBuf, PathBuf, PathBuf)]) -> Vec<Result<PathBuf, String>> {
+    #[cfg(windows)]
+    {
+        let preparar = || -> Result<firma::capi::Almacen, String> { abrir_almacen(&opciones.cert_origen, &opciones.pfx_ruta, &opciones.pfx_clave) };
+        let alm = match preparar() { Ok(a) => a, Err(e) => return pend.iter().map(|_| Err(e.clone())).collect() };
+        let cert = match alm.firmante(&opciones.cert_id) {
+            Ok(c) if c.info.caducado => { let e = format!("El certificado de {} caducó el {}.", c.info.nombre, c.info.caduca); return pend.iter().map(|_| Err(e.clone())).collect(); }
+            Ok(c) => c,
+            Err(e) => return pend.iter().map(|_| Err(e.clone())).collect(),
+        };
+        pend.iter().map(|(_, intermedio, dir, dest)| {
+            let firmado = dir.join("firmado.pdf");
+            let (a, b) = (intermedio.to_string_lossy().into_owned(), firmado.to_string_lossy().into_owned());
+            firma::firmar_pdf(&a, &b, opciones, &cert.info, if opciones.criptografica { Some(&cert) } else { None })?;
+            mover_archivo(&firmado, dest)?;
+            Ok(dest.clone())
+        }).collect()
+    }
+    #[cfg(not(windows))]
+    { let _ = opciones; pend.iter().map(|_| Err("La firma con certificado solo está disponible en Windows.".to_string())).collect() }
+}
+
 /// La firma, si existe, debe ser el último paso (cualquier cambio posterior la invalidaría).
 #[tauri::command]
 async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Option<String>, carpeta_salida: String, sufijo: String, pasos: Vec<Paso>) -> Result<Vec<ResultadoLote>, String> {
     if pasos.is_empty() { return Err("El perfil no tiene ningún paso.".into()); }
+    if pasos.iter().skip(1).any(|p| matches!(p, Paso::Convertir { .. })) {
+        return Err("«Convertir a PDF» tiene que ser el primer paso del perfil.".into());
+    }
+    let con_conversion = matches!(pasos.first(), Some(Paso::Convertir { .. }));
     if carpeta_salida.trim().is_empty() { return Err("Elige la carpeta de salida.".into()); }
     if let Some(i) = pasos.iter().position(|p| matches!(p, Paso::Firmar { .. })) {
-        if i != pasos.len() - 1 { return Err("La firma debe ser el último paso del perfil.".into()); }
+        if pasos[i + 1..].iter().any(|p| !matches!(p, Paso::Imprimir { .. })) {
+            return Err("La firma debe ser el último paso que modifica el PDF (después solo puede ir «Imprimir»).".into());
+        }
     }
     #[cfg(not(windows))]
     if pasos.iter().any(|p| matches!(p, Paso::Firmar { .. })) { return Err("La firma con certificado solo está disponible en Windows.".into()); }
@@ -1898,31 +2178,52 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
         let st = app.state::<EstadoApp>();
         st.cancelar.store(false, Ordering::SeqCst);
     }
-    // el certificado se abre una sola vez
-    #[cfg(windows)]
-    let cert_firma = match pasos.last() {
-        Some(Paso::Firmar { opciones }) => {
-            let alm = abrir_almacen(&opciones.cert_origen, &opciones.pfx_ruta, &opciones.pfx_clave)?;
-            let c = alm.firmante(&opciones.cert_id)?;
-            if c.info.caducado { return Err(format!("El certificado de {} caducó el {}.", c.info.nombre, c.info.caduca)); }
-            Some((alm, c))
-        }
-        _ => None,
-    };
     fs::create_dir_all(&carpeta_salida).map_err(|e| format!("No se pudo crear la carpeta de salida: {e}"))?;
     let total = entradas.len();
     let mut res: Vec<ResultadoLote> = vec![];
+    // Archivos que esperan la firma (último paso): (posición en `res`, PDF intermedio, carpeta temporal, destino).
+    // La firma se hace al final, en un hilo propio y con el certificado abierto una sola vez: sus punteros de
+    // CryptoAPI no pueden cruzar los `await` de los demás pasos.
+    let firma_final = pasos.iter().find_map(|p| match p { Paso::Firmar { opciones } => Some(opciones.clone()), _ => None });
+    // impresiones que van después de la firma (se hacen sobre el PDF ya firmado)
+    let imprimir_tras_firma: Vec<imprimir::Ajustes> = pasos.iter().skip_while(|p| !matches!(p, Paso::Firmar { .. }))
+        .filter_map(|p| match p { Paso::Imprimir { ajustes } => Some(ajustes.clone()), _ => None }).collect();
+    let mut pend_firma: Vec<(usize, PathBuf, PathBuf, PathBuf)> = vec![];
     for (i, ent) in entradas.iter().enumerate() {
         let _ = app.emit("lote-progreso", serde_json::json!({ "actual": i, "total": total, "archivo": ent }));
-        if esta_cancelado(&app.state::<EstadoApp>()) { res.push(ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: "Cancelado".into(), tamano_entrada: 0, tamano_salida: 0 }); continue; }
+        if esta_cancelado(&app.state::<EstadoApp>()) { res.push(ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: "Cancelado".into(), tamano_entrada: 0, tamano_salida: 0, aviso: String::new() }); continue; }
         let tam_in = fs::metadata(ent).map(|m| m.len()).unwrap_or(0);
         let dir = dir_temp_local(&format!("lote{}", i));
+        let mut avisos: Vec<String> = vec![];
         let r: Result<PathBuf, String> = async {
             fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
             let mut actual = PathBuf::from(ent);
+            let es_office = office::tipo_de(&actual).is_some();
+            if es_office && !con_conversion { return Err("Es un documento de Office: añade el paso «Convertir a PDF» al principio del perfil.".into()); }
+            if !es_office && !actual.extension().map(|x| x.to_string_lossy().eq_ignore_ascii_case("pdf")).unwrap_or(false) {
+                return Err("Formato no admitido: solo PDF y documentos de Office.".into());
+            }
             for (k, paso) in pasos.iter().enumerate() {
+                if matches!(paso, Paso::Firmar { .. }) { break; } // se firma después, todos juntos
                 let sig = dir.join(format!("paso{}.pdf", k));
                 let (a, b) = (actual.to_string_lossy().into_owned(), sig.to_string_lossy().into_owned());
+                if let Paso::Convertir { opciones } = paso {
+                    if !es_office { continue; } // los PDF no necesitan conversión
+                    let _ = app.emit("lote-progreso", serde_json::json!({ "actual": i, "total": total, "archivo": ent, "fase": "Convirtiendo a PDF" }));
+                    let (op, cancelar) = (opciones.clone(), app.state::<EstadoApp>().cancelar.clone());
+                    tauri::async_runtime::spawn_blocking(move || office::convertir(std::path::Path::new(&a), std::path::Path::new(&b), &op, &cancelar))
+                        .await.map_err(|e| e.to_string())??;
+                    actual = sig;
+                    continue;
+                }
+                if let Paso::Imprimir { ajustes } = paso {
+                    // un fallo al imprimir no invalida el archivo procesado: queda como aviso
+                    match imprimir_archivo(&app, &a, ajustes).await {
+                        Ok(r) => { avisos.push("Impreso".into()); avisos.extend(r.avisos); }
+                        Err(e) => avisos.push(format!("No se pudo imprimir: {}", e.replace('\n', " · "))),
+                    }
+                    continue;
+                }
                 match paso {
                     Paso::Comprimir { nivel } => {
                         ejecutar_compresion(&app, &a, &b, nivel).await?;
@@ -1943,31 +2244,73 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
                             Err(e) => return Err(e),
                         }
                     }
-                    Paso::Firmar { opciones } => {
-                        #[cfg(windows)]
-                        {
-                            let (_, cert) = cert_firma.as_ref().ok_or("Certificado no disponible")?;
-                            firma::firmar_pdf(&a, &b, opciones, &cert.info, if opciones.criptografica { Some(cert) } else { None })?;
-                        }
-                        #[cfg(not(windows))]
-                        { let _ = opciones; return Err("La firma con certificado solo está disponible en Windows.".into()); }
-                    }
+                    Paso::Firmar { .. } | Paso::Imprimir { .. } | Paso::Convertir { .. } => unreachable!(),
                 }
                 actual = sig;
             }
             let dest = destino_lote(ent, &base, &carpeta_salida, &sufijo);
             if let Some(p) = dest.parent() { fs::create_dir_all(p).map_err(|e| e.to_string())?; }
+            if firma_final.is_some() { return Ok(actual); } // queda pendiente de firmar
             mover_archivo(&actual, &dest)?;
             Ok(dest)
         }.await;
+        if firma_final.is_some() {
+            if let Ok(intermedio) = &r {
+                pend_firma.push((res.len(), intermedio.clone(), dir.clone(), destino_lote(ent, &base, &carpeta_salida, &sufijo)));
+                res.push(ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: "Pendiente de firma".into(), tamano_entrada: tam_in, tamano_salida: 0, aviso: avisos.join(" · ") });
+                continue;
+            }
+        }
         limpiar_dir_temp(&dir);
         res.push(match r {
-            Ok(d) => ResultadoLote { entrada: ent.clone(), tamano_salida: fs::metadata(&d).map(|m| m.len()).unwrap_or(0), salida: d.to_string_lossy().into_owned(), ok: true, error: String::new(), tamano_entrada: tam_in },
-            Err(e) => ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: e, tamano_entrada: tam_in, tamano_salida: 0 },
+            Ok(d) => ResultadoLote { entrada: ent.clone(), tamano_salida: fs::metadata(&d).map(|m| m.len()).unwrap_or(0), salida: d.to_string_lossy().into_owned(), ok: true, error: String::new(), tamano_entrada: tam_in, aviso: avisos.join(" · ") },
+            Err(e) => ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: e, tamano_entrada: tam_in, tamano_salida: 0, aviso: avisos.join(" · ") },
         });
+    }
+    if let (Some(opciones), false) = (firma_final, pend_firma.is_empty()) {
+        let _ = app.emit("lote-progreso", serde_json::json!({ "actual": total, "total": total, "archivo": "Firmando…" }));
+        let pend = pend_firma.clone();
+        let firmados = tauri::async_runtime::spawn_blocking(move || firmar_pendientes_lote(&opciones, &pend))
+            .await.map_err(|e| e.to_string())?;
+        for ((pos, _, dir, _), r) in pend_firma.iter().zip(firmados) {
+            limpiar_dir_temp(dir);
+            let it = &mut res[*pos];
+            match r {
+                Ok(d) => {
+                    it.tamano_salida = fs::metadata(&d).map(|m| m.len()).unwrap_or(0); it.salida = d.to_string_lossy().into_owned(); it.ok = true; it.error.clear();
+                    for aj in &imprimir_tras_firma {
+                        match imprimir_archivo(&app, &it.salida, aj).await {
+                            Ok(_) => { if !it.aviso.is_empty() { it.aviso.push_str(" · "); } it.aviso.push_str("Impreso"); }
+                            Err(e) => { if !it.aviso.is_empty() { it.aviso.push_str(" · "); } it.aviso.push_str(&format!("No se pudo imprimir: {}", e.replace('\n', " · "))); }
+                        }
+                    }
+                }
+                Err(e) => { it.error = e; }
+            }
+        }
     }
     let _ = app.emit("lote-progreso", serde_json::json!({ "actual": total, "total": total, "archivo": "" }));
     Ok(res)
+}
+
+// ───────────── Office a PDF ─────────────
+
+#[tauri::command]
+async fn info_office() -> office::InfoOffice {
+    tauri::async_runtime::spawn_blocking(office::info).await.unwrap_or_default()
+}
+
+/// Convierte un documento de Word, Excel o PowerPoint a PDF con el Office instalado. Devuelve el tamaño del PDF.
+#[tauri::command]
+async fn convertir_office(app: tauri::AppHandle, entrada: String, salida: String, opciones: office::Opciones) -> Result<u64, String> {
+    let estado = app.state::<EstadoApp>();
+    if esta_cancelado(&estado) { return Err("Operación cancelada".into()); }
+    let cancelar = estado.cancelar.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        office::convertir(std::path::Path::new(&entrada), std::path::Path::new(&salida), &opciones, &cancelar)
+    })
+    .await
+    .map_err(|e| format!("Error interno: {e}"))?
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1983,9 +2326,16 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            // Solo la ventana principal pregunta antes de cerrar; las de impresión se cierran sin más.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                window.emit("close-requested", ()).ok();
+                if window.label() == "main" {
+                    api.prevent_close();
+                    window.emit("close-requested", ()).ok();
+                }
+            }
+            // Al cerrar la ventana principal se cierra la app, aunque quede abierta alguna ventana de impresión.
+            if let tauri::WindowEvent::Destroyed = event {
+                if window.label() == "main" { window.app_handle().exit(0); }
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -1999,6 +2349,13 @@ pub fn run() {
             vista_previa_formulario,
             listar_pdfs_carpeta,
             ejecutar_lote,
+            listar_impresoras,
+            sondear_impresora,
+            info_office,
+            convertir_office,
+            info_impresion,
+            imprimir_pdf,
+            dialogo_impresion,
             comprimir_pdf,
             ocr_pdf,
             estado_utils,

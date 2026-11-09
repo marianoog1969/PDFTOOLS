@@ -2316,7 +2316,7 @@ dependencies = [
 
 [[package]]
 name = "pdftool"
-version = "3.4.0"
+version = "3.11.1"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -2327,6 +2327,9 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
+ "webview2-com",
+ "windows",
+ "windows-core 0.61.2",
  "zune-heic",
 ]
 

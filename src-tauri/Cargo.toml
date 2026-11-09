@@ -1,6 +1,6 @@
 [package]
 name = "pdftool"
-version = "3.5.0"
+version = "3.11.1"
 description = "Combinar, comprimir y OCR de PDFs"
 edition = "2021"
 
@@ -21,6 +21,13 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
 sha2 = "0.10"
+
+[target.'cfg(windows)'.dependencies]
+# Las mismas versiones que usa Tauri (wry), para imprimir con WebView2
+webview2-com = "0.38"
+windows-core = "0.61"
+# Automatización de Office (convertir Word, Excel y PowerPoint a PDF)
+windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_Registry", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Threading"] }
 
 [profile.release]
 panic = "abort"

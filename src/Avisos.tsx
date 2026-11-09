@@ -44,7 +44,7 @@ export function AvisosHost() {
 }
 
 // ── Confirmaciones ──
-export interface ConfirmDatos { titulo: string; texto?: string; ok?: string; cancelar?: string; peligro?: boolean; }
+export interface ConfirmDatos { titulo: string; texto?: string; ok?: string; cancelar?: string; peligro?: boolean; /** icono: «trash» al borrar (por defecto con peligro), «warn» para avisos */ icono?: "trash" | "warn"; }
 let oyenteConf: ((d: ConfirmDatos, r: (v: boolean) => void) => void) | null = null;
 export function confirmar(d: ConfirmDatos): Promise<boolean> {
   return new Promise((res) => { if (!oyenteConf) { res(window.confirm(d.titulo + (d.texto ? "\n\n" + d.texto : ""))); return; } oyenteConf(d, res); });
@@ -66,7 +66,7 @@ export function ConfirmHost() {
     <div className="modal-fondo" onClick={() => cerrar(false)}>
       <div className="modal-caja dlg-conf" role="alertdialog" aria-modal="true" aria-label={d.titulo} onClick={(e) => e.stopPropagation()}>
         <div className="dlg-cuerpo">
-          <div className={`dlg-icono${d.peligro ? " peligro" : ""}`}><I n={d.peligro ? "trash" : "warn"} s={20} /></div>
+          <div className={`dlg-icono${d.peligro ? " peligro" : ""}`}><I n={d.icono ?? (d.peligro ? "trash" : "warn")} s={20} /></div>
           <div><h3>{d.titulo}</h3>{d.texto && <p>{d.texto}</p>}</div>
         </div>
         <div className="dlg-pie">

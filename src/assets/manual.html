@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Tool v2.0.10 — Manual de usuario</title>
+<title>PDF Tool v3.11.1 — Manual de usuario</title>
 <style>
 :root {
   --azul:       #1B3A6B;
@@ -469,546 +469,443 @@ kbd {
   .layout { grid-template-columns: 1fr; }
   .contenido { padding: 24px 32px; max-width: none; }
 }
+kbd { font-family: Consolas, monospace; font-size: 12px; padding: 1px 6px; border: 1px solid var(--borde); border-bottom-width: 2px; border-radius: 4px; background: var(--blanco); }
+html { scroll-behavior: smooth; }
 </style>
 </head>
 <body>
-
 <div class="layout">
 
-  <!-- ═══ SIDEBAR ═══ -->
+  <!-- ═══ MENÚ LATERAL ═══ -->
   <nav class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <div class="logo-box">PDF</div>
-        <div>
-          <div class="sidebar-titulo">PDF Tool</div>
-          <div class="sidebar-sub">Manual de usuario</div>
-        </div>
+        <div><div class="sidebar-titulo">PDF Tool</div><div class="sidebar-sub">Manual de usuario</div></div>
       </div>
-      <span class="sidebar-ver">v2.0.10</span>
+      <span class="sidebar-ver">v3.11.1</span>
     </div>
-
     <div class="sidebar-nav">
       <div class="nav-grupo">General</div>
       <a class="nav-link" href="#intro"><span class="nav-num">1</span>Introducción</a>
-      <a class="nav-link" href="#pantalla"><span class="nav-num">2</span>Pantalla principal</a>
+      <a class="nav-link" href="#ventana"><span class="nav-num">2</span>La ventana</a>
       <a class="nav-link" href="#utils"><span class="nav-num">3</span>Carpeta UTILS</a>
-
-      <div class="nav-grupo">Operaciones</div>
-      <a class="nav-link" href="#combinar"><span class="nav-num">4</span>Combinar PDF</a>
-      <a class="nav-link" href="#comprimir"><span class="nav-num">5</span>Comprimir PDF</a>
-      <a class="nav-link" href="#ocr"><span class="nav-num">6</span>OCR</a>
-      <a class="nav-link" href="#extraer"><span class="nav-num">7</span>Extraer páginas</a>
-      <a class="nav-link" href="#imagenes"><span class="nav-num">8</span>Imágenes a PDF</a>
-
+      <div class="nav-grupo">Visor</div>
+      <a class="nav-link" href="#visor"><span class="nav-num">4</span>Abrir y leer</a>
+      <a class="nav-link" href="#organizar"><span class="nav-num">5</span>Organizar páginas</a>
+      <a class="nav-link" href="#anotar"><span class="nav-num">6</span>Anotar y tachar</a>
+      <a class="nav-link" href="#firmar"><span class="nav-num">7</span>Firmar y validar</a>
+      <div class="nav-grupo">Herramientas</div>
+      <a class="nav-link" href="#combinar"><span class="nav-num">8</span>Combinar</a>
+      <a class="nav-link" href="#extraer"><span class="nav-num">9</span>Extraer páginas</a>
+      <a class="nav-link" href="#dividir"><span class="nav-num">10</span>Dividir</a>
+      <a class="nav-link" href="#comprimir"><span class="nav-num">11</span>Comprimir</a>
+      <a class="nav-link" href="#ocr"><span class="nav-num">12</span>OCR</a>
+      <a class="nav-link" href="#imagenes"><span class="nav-num">13</span>Imágenes a PDF</a>
+      <a class="nav-link" href="#office"><span class="nav-num">14</span>Office a PDF</a>
+      <a class="nav-link" href="#marca"><span class="nav-num">15</span>Marca de agua</a>
+      <a class="nav-link" href="#formulario"><span class="nav-num">16</span>Rellenar formulario</a>
+      <a class="nav-link" href="#metadatos"><span class="nav-num">17</span>Metadatos</a>
+      <a class="nav-link" href="#lotes"><span class="nav-num">18</span>Lotes y perfiles</a>
+      <a class="nav-link" href="#imprimir"><span class="nav-num">19</span>Imprimir</a>
       <div class="nav-grupo">Gestión</div>
-      <a class="nav-link" href="#archivos-uso"><span class="nav-num">9</span>Archivos en uso</a>
-      <a class="nav-link" href="#protegidos"><span class="nav-num">10</span>Archivos protegidos</a>
-      <a class="nav-link" href="#cancelar"><span class="nav-num">11</span>Cancelar operación</a>
-      <a class="nav-link" href="#registro"><span class="nav-num">12</span>Registro y log</a>
-      <a class="nav-link" href="#historial"><span class="nav-num">13</span>Historial de sesión</a>
-
+      <a class="nav-link" href="#resultados"><span class="nav-num">20</span>Resultados</a>
+      <a class="nav-link" href="#problemas"><span class="nav-num">21</span>Archivos en uso o protegidos</a>
+      <a class="nav-link" href="#registro"><span class="nav-num">22</span>Registro y log</a>
       <div class="nav-grupo">Referencia</div>
-      <a class="nav-link" href="#faq"><span class="nav-num">14</span>Preguntas frecuentes</a>
+      <a class="nav-link" href="#atajos"><span class="nav-num">23</span>Atajos de teclado</a>
+      <a class="nav-link" href="#faq"><span class="nav-num">24</span>Preguntas frecuentes</a>
     </div>
-
-    <div class="sidebar-footer">
-      Servicio de Informática<br>
-      CIS Guillermo Miranda · Murcia
-    </div>
+    <div class="sidebar-footer">Servicio de Informática<br>CIS Guillermo Miranda · Murcia</div>
   </nav>
 
   <!-- ═══ CONTENIDO ═══ -->
   <main class="contenido">
 
-    <!-- PORTADA -->
     <div class="portada">
       <div class="portada-inst">Secretaría General de Instituciones Penitenciarias — CIS Guillermo Miranda</div>
       <h1><span>PDF</span> Tool</h1>
-      <p class="portada-desc">
-        Herramienta interna para el tratamiento de documentos PDF:<br>
-        combinar, comprimir, aplicar OCR y extraer páginas.
-      </p>
-      <div class="portada-meta">
-        <span>Versión 2.0.10</span>
-        <span>·</span>
-        <span>Servicio de Informática</span>
-        <span>·</span>
-        <span>Murcia, agosto 2026</span>
-      </div>
+      <p class="portada-desc">Herramienta interna para trabajar con PDF sin conexión:<br>ver, organizar, anotar, firmar, combinar, comprimir, OCR, imprimir y procesar por lotes.</p>
+      <div class="portada-meta"><span>Versión 3.11.1</span><span>·</span><span>Servicio de Informática</span><span>·</span><span>Murcia, noviembre 2026</span></div>
     </div>
 
-    <!-- ÍNDICE -->
     <div class="indice">
       <h3>Contenido</h3>
       <ol>
         <li><a href="#intro"><span class="n">1</span>Introducción</a></li>
-        <li><a href="#pantalla"><span class="n">2</span>Pantalla principal</a></li>
+        <li><a href="#ventana"><span class="n">2</span>La ventana</a></li>
         <li><a href="#utils"><span class="n">3</span>Carpeta UTILS</a></li>
-        <li><a href="#combinar"><span class="n">4</span>Combinar PDF</a></li>
-        <li><a href="#comprimir"><span class="n">5</span>Comprimir PDF</a></li>
-        <li><a href="#ocr"><span class="n">6</span>OCR</a></li>
-        <li><a href="#extraer"><span class="n">7</span>Extraer páginas</a></li>
-        <li><a href="#imagenes"><span class="n">8</span>Imágenes a PDF</a></li>
-        <li><a href="#archivos-uso"><span class="n">9</span>Archivos en uso</a></li>
-        <li><a href="#protegidos"><span class="n">10</span>Archivos protegidos</a></li>
-        <li><a href="#cancelar"><span class="n">11</span>Cancelar operación</a></li>
-        <li><a href="#registro"><span class="n">12</span>Registro y log</a></li>
-        <li><a href="#historial"><span class="n">13</span>Historial de sesión</a></li>
-        <li><a href="#faq"><span class="n">14</span>Preguntas frecuentes</a></li>
+        <li><a href="#visor"><span class="n">4</span>Visor: abrir y leer</a></li>
+        <li><a href="#organizar"><span class="n">5</span>Organizar páginas</a></li>
+        <li><a href="#anotar"><span class="n">6</span>Anotar, resaltar y tachar</a></li>
+        <li><a href="#firmar"><span class="n">7</span>Firmar y validar firmas</a></li>
+        <li><a href="#combinar"><span class="n">8</span>Combinar</a></li>
+        <li><a href="#extraer"><span class="n">9</span>Extraer páginas</a></li>
+        <li><a href="#dividir"><span class="n">10</span>Dividir</a></li>
+        <li><a href="#comprimir"><span class="n">11</span>Comprimir</a></li>
+        <li><a href="#ocr"><span class="n">12</span>OCR</a></li>
+        <li><a href="#imagenes"><span class="n">13</span>Imágenes a PDF</a></li>
+        <li><a href="#office"><span class="n">14</span>Office a PDF</a></li>
+        <li><a href="#marca"><span class="n">15</span>Marca de agua y numeración</a></li>
+        <li><a href="#formulario"><span class="n">16</span>Rellenar formulario</a></li>
+        <li><a href="#metadatos"><span class="n">17</span>Metadatos y limpieza</a></li>
+        <li><a href="#lotes"><span class="n">18</span>Lotes y perfiles</a></li>
+        <li><a href="#imprimir"><span class="n">19</span>Imprimir</a></li>
+        <li><a href="#resultados"><span class="n">20</span>Resultados y archivos de salida</a></li>
+        <li><a href="#problemas"><span class="n">21</span>Archivos en uso, protegidos o dañados</a></li>
+        <li><a href="#registro"><span class="n">22</span>Registro, log e historial</a></li>
+        <li><a href="#atajos"><span class="n">23</span>Atajos de teclado</a></li>
+        <li><a href="#faq"><span class="n">24</span>Preguntas frecuentes</a></li>
       </ol>
     </div>
 
-    <!-- 1 INTRODUCCIÓN -->
+    <!-- 1 -->
     <section class="seccion" id="intro">
       <h2><span class="num">1</span>Introducción</h2>
       <div class="sep"></div>
-      <p>PDF Tool es una herramienta interna desarrollada por el Servicio de Informática del CIS Guillermo Miranda para el tratamiento de documentos PDF sin necesidad de conexión a internet ni servicios externos. Todas las operaciones se realizan localmente en el equipo.</p>
-
-      <h3>Requisitos del sistema</h3>
+      <p>PDF Tool es una herramienta interna del Servicio de Informática del CIS Guillermo Miranda para trabajar con documentos PDF. Todo se hace en el propio equipo: los documentos no salen a internet. Solo se conecta a la red para dos cosas opcionales de la firma: comprobar si un certificado está revocado y añadir los datos de validación a largo plazo (LTV).</p>
+      <h3>Requisitos</h3>
       <ul>
-        <li>Windows 10 / 11 (64 bits)</li>
-        <li>WebView2 Runtime — incluido en Windows 11; en Windows 10 se instala automáticamente la primera vez</li>
-        <li>Carpeta <strong>UTILS</strong> junto al <code>.exe</code> con Ghostscript y Tesseract (ver sección 3)</li>
+        <li>Windows 10 u 11 de 64 bits.</li>
+        <li>WebView2 Runtime (viene con Windows 11 y con las versiones actualizadas de Windows 10).</li>
+        <li>La carpeta <strong>UTILS</strong> con Ghostscript y Tesseract (sección 3).</li>
+        <li>Para convertir documentos de Word, Excel y PowerPoint: Microsoft Office instalado (sección 14).</li>
       </ul>
-
-      <h3>Arranque</h3>
-      <p>Haz doble clic sobre el acceso directo del escritorio o sobre <code>pdftool.exe</code>. La aplicación arranca en 1-2 segundos. Las versiones de Ghostscript y Tesseract detectadas aparecen en la barra superior al cabo de un momento.</p>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Si la pantalla tarda un segundo en aparecer al arrancar, es normal: la app detecta las versiones de GS y Tesseract en segundo plano para no bloquear la interfaz.
-      </div>
+      <h3>Principio básico: los originales no se tocan</h3>
+      <p>Todas las operaciones crean un archivo <strong>nuevo</strong> (con un sufijo como <code>_OCR</code> o <code>_firmado</code>) y dejan el original como estaba. Si ya existe un archivo con ese nombre, la app pregunta si quieres sobrescribirlo, renombrarlo o cancelar.</p>
     </section>
 
-    <!-- 2 PANTALLA PRINCIPAL -->
-    <section class="seccion" id="pantalla">
-      <h2><span class="num">2</span>Pantalla principal</h2>
+    <!-- 2 -->
+    <section class="seccion" id="ventana">
+      <h2><span class="num">2</span>La ventana</h2>
       <div class="sep"></div>
-      <p>La pantalla está dividida en cuatro tarjetas independientes dispuestas en una cuadrícula 2×2:</p>
-
-      <div class="tarjeta-func">
-        <div class="icono-func az">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="13" height="16" rx="2"/><path d="M4 8v11a2 2 0 0 0 2 2h11"/></svg>
-        </div>
-        <div><h4>Combinar</h4><p>Une varios PDF en uno solo. Permite reordenar los archivos arrastrando.</p></div>
-      </div>
-
-      <div class="tarjeta-func">
-        <div class="icono-func na">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-        </div>
-        <div><h4>Comprimir</h4><p>Reduce el tamaño de archivos PDF. Especialmente útil con escaneos de alta resolución.</p></div>
-      </div>
-
-      <div class="tarjeta-func">
-        <div class="icono-func ve">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9h8M8 13h5"/><path d="M3 7V5a2 2 0 0 1 2-2h2M3 17v2a2 2 0 0 0 2 2h2M21 7V5a2 2 0 0 0-2-2h-2M21 17v2a2 2 0 0 1-2 2h-2"/></svg>
-        </div>
-        <div><h4>OCR</h4><p>Añade una capa de texto buscable a documentos escaneados. Idioma: español.</p></div>
-      </div>
-
-      <div class="tarjeta-func">
-        <div class="icono-func mo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v18"/><path d="M14 8l3 3-3 3"/></svg>
-        </div>
-        <div><h4>Extraer páginas</h4><p>Genera un nuevo PDF con solo las páginas que indiques de un documento existente.</p></div>
-      </div>
-
-      <div class="tarjeta-func">
-        <div class="icono-func ve">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
-        <div><h4>Imágenes a PDF</h4><p>Convierte JPG, PNG, BMP, TIFF y otros formatos a PDF tamaño A4.</p></div>
-      </div>
-
-      <p>Bajo las tarjetas se encuentran el <strong>registro de actividad</strong> (historial de la sesión en pantalla) y el <strong>historial de archivos procesados</strong> de la sesión actual.</p>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Puedes arrastrar archivos PDF directamente desde el Explorador de Windows sobre cualquier tarjeta. Si arrastras un archivo que no sea PDF, la app lo avisa y lo ignora.
-      </div>
+      <ul>
+        <li><strong>Cabecera:</strong> menús <em>Archivo, Edición, Ver, Herramientas y Ayuda</em>; botón <strong>Buscar… (Ctrl+K)</strong>, tema claro u oscuro, atajos de teclado (<code>?</code>) y donar.</li>
+        <li><strong>Menú lateral:</strong> todas las herramientas agrupadas. Un número junto a una herramienta indica cuántos archivos tiene en espera; un punto que parpadea indica que está trabajando. Se encoge a iconos con <strong>Contraer menú</strong> o <strong>Ctrl+B</strong> (en ventanas estrechas se encoge solo).</li>
+        <li><strong>Zona de trabajo:</strong> la herramienta elegida. Al empezar se muestra el <strong>Visor</strong>, con accesos rápidos para abrir, firmar, anotar u organizar y la lista de archivos recientes.</li>
+        <li><strong>Barra de estado</strong> (abajo): estado (Listo / Procesando), herramienta, documento abierto, último mensaje (clic para ver el log), estado de los componentes de UTILS y versión (clic para «Acerca de»).</li>
+      </ul>
+      <h3>Buscar cualquier cosa: Ctrl+K</h3>
+      <p>Abre un buscador de herramientas, acciones (abrir, imprimir, firmar, cambiar tema…) y archivos recientes. Escribe parte del nombre, sin preocuparte por tildes ni mayúsculas, y pulsa <kbd>Intro</kbd>.</p>
+      <h3>Arrastrar y soltar</h3>
+      <p>Puedes arrastrar archivos desde el Explorador sobre la herramienta que quieras. Mientras arrastras, un aviso indica a qué herramienta irán y cuántos archivos se ignorarán por no ser del tipo admitido. Si sueltas varios archivos (o PDF mezclados con imágenes) sobre el Visor, aparece una lista para elegir qué hacer con ellos: abrirlos, combinarlos, comprimirlos, pasarles OCR o combinarlo todo en un único PDF.</p>
     </section>
 
-    <!-- 3 UTILS -->
+    <!-- 3 -->
     <section class="seccion" id="utils">
       <h2><span class="num">3</span>Carpeta UTILS</h2>
       <div class="sep"></div>
-      <p>La aplicación necesita dos programas externos para funcionar. Deben estar instalados en la carpeta <strong>UTILS</strong> junto al ejecutable:</p>
+      <p>Algunas funciones usan programas externos que deben estar en la carpeta <strong>UTILS</strong>, junto a <code>pdftool.exe</code> o en la carpeta de red <code>P:\APPS\PDFTOOLS\UTILS</code>:</p>
+      <table class="tabla">
+        <thead><tr><th>Programa</th><th>Ruta</th><th>Para qué</th></tr></thead>
+        <tbody>
+          <tr><td class="nivel">Ghostscript</td><td><code>UTILS\gs\bin\gswin64c.exe</code></td><td>Ver páginas, comprimir, OCR, extraer, dividir, imprimir (respaldo)</td></tr>
+          <tr><td class="nivel">Tesseract</td><td><code>UTILS\tesseract\tesseract.exe</code></td><td>OCR (con <code>tessdata\spa.traineddata</code>)</td></tr>
+          <tr><td class="nivel">SumatraPDF <small>(opcional)</small></td><td><code>UTILS\sumatra\SumatraPDF.exe</code></td><td>Respaldo adicional para imprimir</td></tr>
+        </tbody>
+      </table>
+      <p>Copia las carpetas de instalación <strong>completas</strong>, no solo el ejecutable. Si falta algo, la barra de estado muestra <em>«Falta Ghostscript»</em> (clic para abrir la carpeta UTILS) y la herramienta afectada enseña una franja amarilla con <strong>Ver cómo</strong>.</p>
+      <div class="aviso">Si aparece <em>«Ghostscript no puede cargar su DLL»</em>, el equipo no tiene el Visual C++ Redistributable. Instálalo desde <code>https://aka.ms/vs/17/release/vc_redist.x64.exe</code> o copia <code>VCRUNTIME140.dll</code>, <code>VCRUNTIME140_1.dll</code> y <code>MSVCP140.dll</code> en <code>UTILS\gs\bin\</code>.</div>
+    </section>
 
+    <!-- 4 -->
+    <section class="seccion" id="visor">
+      <h2><span class="num">4</span>Visor: abrir y leer</h2>
+      <div class="sep"></div>
+      <p>Abre uno o varios PDF con <strong>Abrir PDF…</strong> (<kbd>Ctrl+O</kbd>), arrastrándolos o desde los recientes. Cada documento va en su pestaña; <kbd>Ctrl+W</kbd> cierra la actual.</p>
+      <p>Arriba están los modos: <strong>Leer</strong>, <strong>Organizar páginas</strong>, <strong>Anotar</strong> y <strong>Firmar</strong>, además del botón <strong>Imprimir</strong> y el buscador de texto. El botón de la izquierda muestra u oculta las miniaturas.</p>
       <ul>
-        <li><strong>Ghostscript</strong> — necesario para <em>todas</em> las operaciones: Combinar, Comprimir, OCR y Extraer.</li>
-        <li><strong>Tesseract</strong> — necesario solo para el OCR.</li>
-      </ul>
-
-      <div class="arbol">
-<span class="ruta">P:\APPS\PDFTOOLS\</span>
-├── pdftool.exe
-├── pdftool.log          <span class="com">← registro automático</span>
-└── UTILS\
-    ├── gs\              <span class="com">← carpeta completa de Ghostscript</span>
-    │   └── bin\
-    │       ├── gswin64c.exe
-    │       └── gsdll64.dll
-    └── tesseract\       <span class="com">← carpeta completa de Tesseract</span>
-        ├── tesseract.exe
-        └── tessdata\
-            └── spa.traineddata
-      </div>
-
-
-      <div class="aviso">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Si las versiones no aparecen en la barra superior al arrancar, la carpeta UTILS no está en la ruta correcta o los binarios están en una subcarpeta adicional. Revisa la estructura indicada arriba.
-      </div>
-
-      <div class="aviso">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <div><strong>Error "Can't load Ghostscript DLL"</strong> — el equipo no tiene instalado el Visual C++ Redistributable.<br><br>
-        <strong>Solución A:</strong> Instalar <code>https://aka.ms/vs/17/release/vc_redist.x64.exe</code><br>
-        <strong>Solución B:</strong> Copiar desde <code>C:\Windows\System32\</code> del equipo que funciona a <code>UTILS\gs\bin\</code>: <code>VCRUNTIME140.dll</code>, <code>VCRUNTIME140_1.dll</code>, <code>MSVCP140.dll</code></div>
-      </div>
-
-      <h3>Descargas</h3>
-      <ul>
-        <li><strong>Ghostscript:</strong> <code>github.com/ArtifexSoftware/ghostpdl-downloads/releases</code> — descargar el archivo <code>gsXXXXw64.exe</code> e instalar en la carpeta <code>UTILS\gs\</code></li>
-        <li><strong>Tesseract:</strong> <code>github.com/UB-Mannheim/tesseract/wiki</code> — durante la instalación, marcar el idioma <strong>Spanish</strong> en la lista de datos adicionales</li>
+        <li><strong>Leer:</strong> navega por páginas, amplía o reduce, ajusta al ancho, página completa o dos páginas enfrentadas.</li>
+        <li><strong>Buscar texto:</strong> encuentra palabras sin distinguir mayúsculas ni tildes; las páginas con resultados se marcan en amarillo. Si el PDF es un escaneo sin texto, la app lo avisa y sugiere el OCR.</li>
       </ul>
     </section>
 
-    <!-- 4 COMBINAR -->
+    <!-- 5 -->
+    <section class="seccion" id="organizar">
+      <h2><span class="num">5</span>Organizar páginas</h2>
+      <div class="sep"></div>
+      <ul>
+        <li><strong>Seleccionar:</strong> clic; <kbd>Ctrl</kbd>+clic para añadir; <kbd>Mayús</kbd>+clic para un tramo; <kbd>Ctrl+A</kbd> todas; o dibuja un rectángulo sobre el fondo. También hay botones para impares, pares e invertir.</li>
+        <li><strong>Mover:</strong> arrastra las miniaturas, o usa <em>Al inicio / Al final</em>. Puedes arrastrar páginas a otra pestaña para copiarlas a otro PDF.</li>
+        <li><strong>Girar, duplicar, insertar en blanco, eliminar</strong> (<kbd>Supr</kbd>), y <strong>Extraer a PDF nuevo</strong> las páginas seleccionadas. Clic derecho abre un menú con todas las acciones, incluido <strong>Imprimir selección…</strong>.</li>
+        <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> deshacen y rehacen.</li>
+      </ul>
+      <p>Los cambios se guardan como copia <code>_editado.pdf</code> con <strong>Guardar copia con los cambios</strong>. Mientras no los apliques, la barra de estado indica <em>«Cambios sin guardar»</em> y la app avisa al cerrar.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="seccion" id="anotar">
+      <h2><span class="num">6</span>Anotar, resaltar y tachar</h2>
+      <div class="sep"></div>
+      <ul>
+        <li><strong>Texto:</strong> haz clic donde quieras escribir; puedes cambiar tamaño y color.</li>
+        <li><strong>Resaltar:</strong> arrastra un rectángulo sobre la zona.</li>
+        <li><strong>Tachar (eliminación real):</strong> dibuja un recuadro negro sobre lo que haya que ocultar. Al guardar, las páginas afectadas se convierten en imagen, así que <strong>el texto tapado desaparece del archivo</strong> y no se puede copiar ni recuperar. También se eliminan las anotaciones y los metadatos de esas páginas.</li>
+      </ul>
+      <p>Se guarda con <strong>Guardar copia anotada</strong> como <code>_anotado.pdf</code>.</p>
+      <div class="aviso">Tachar convierte esas páginas en imagen: su texto deja de ser buscable. Si lo necesitas, pasa después el OCR (las zonas tachadas seguirán ocultas).</div>
+    </section>
+
+    <!-- 7 -->
+    <section class="seccion" id="firmar">
+      <h2><span class="num">7</span>Firmar y validar firmas</h2>
+      <div class="sep"></div>
+      <h3>Firmar</h3>
+      <ol class="pasos">
+        <li>Abre el PDF y entra en <strong>Firmar</strong> (también desde la portada, el menú Herramientas o Ctrl+K).</li>
+        <li>Elige el certificado: <strong>Windows / DNIe</strong> (almacén de Windows, FNMT, tarjeta) o un archivo <strong>.pfx / .p12</strong> con su contraseña.</li>
+        <li>Indica qué se añade: firma digital, sello visible (nombre, NIF y, si quieres, fecha y hora) y en qué páginas va el sello (una, todas, la última o un rango).</li>
+        <li>Dibuja el recuadro del sello arrastrando sobre la página; se puede mover y redimensionar por las esquinas.</li>
+        <li>Elige la <strong>duración</strong>: <em>Básica</em> (sin conexión) o <em>Larga duración (LTV)</em>, que guarda en el PDF la cadena de certificados y las pruebas de revocación para que la firma se pueda validar en el futuro.</li>
+        <li>Pulsa firmar e introduce el PIN si es un DNIe. Se guarda como <code>_firmado.pdf</code>.</li>
+      </ol>
+      <p>La firma es incremental: el contenido original no cambia y las firmas anteriores siguen siendo válidas. Para firmar <strong>muchos PDF</strong> con el mismo certificado y posición, usa <em>Elegir varios PDF para firmar…</em> o firma todos los abiertos; también puedes usar un perfil de Lotes con el paso «Firmar».</p>
+      <h3>Validar</h3>
+      <p>Al abrir un PDF firmado se comprueban sus firmas: integridad (si cambió después de firmar), firmante, emisor y fechas, cadena de confianza y cambios posteriores. El resultado aparece como <em>Válida / Con avisos / No válida</em>. <strong>Comprobar revocación</strong> consulta (con conexión) si el certificado está revocado.</p>
+    </section>
+
+    <!-- 8 -->
     <section class="seccion" id="combinar">
-      <h2><span class="num">4</span>Combinar PDF</h2>
+      <h2><span class="num">8</span>Combinar</h2>
       <div class="sep"></div>
-      <p>Une varios archivos PDF en uno solo. El orden de las páginas en el resultado es el mismo que el orden de los archivos en la lista.</p>
-
-      <h3>Paso a paso</h3>
       <ol class="pasos">
-        <li>Añade los archivos arrastrándolos sobre la tarjeta Combinar, o pulsa <strong>Elegir archivos</strong>.</li>
-        <li>Junto a cada archivo se muestra el número de páginas y su tamaño. El botón indica el total: <em>Combinar (3 · 23p)</em>.</li>
-        <li>Reordena si es necesario arrastrando cada elemento de la lista.</li>
-        <li>Pulsa <strong>Combinar</strong>. Aparece el diálogo para elegir dónde guardar el resultado.</li>
-        <li>Al terminar, la carpeta y el PDF generado se abren automáticamente.</li>
-        <li>La app pregunta si deseas borrar los archivos originales. Esta acción no se puede deshacer.</li>
+        <li>Añade los PDF (arrastrando o con <strong>Elegir archivos</strong>). Se ven las páginas y el tamaño de cada uno.</li>
+        <li>Ordénalos arrastrando o con las flechas ↑ ↓.</li>
+        <li>Pulsa <strong>Combinar</strong> y elige dónde guardar. Si algún archivo está protegido o dañado, la app lo indica y pregunta si continuar sin él.</li>
       </ol>
-
-      <h3>Validación previa</h3>
-      <p>Antes de combinar, la app comprueba cada archivo con Ghostscript. Si detecta alguno con problemas, lo marca en rojo en la lista y muestra el motivo:</p>
-      <ul>
-        <li><strong>Protegido con contraseña</strong> — el archivo tiene contraseña de apertura y no puede procesarse.</li>
-        <li><strong>Corrupto o inválido</strong> — el archivo está dañado o no es un PDF válido.</li>
-      </ul>
-      <p>Si solo algunos archivos fallan, aparece un diálogo preguntando si continuar con los válidos o cancelar todo.</p>
-
-      <div class="exito">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        El proceso de combinado usa Ghostscript internamente, lo que garantiza compatibilidad con cualquier tipo de PDF, incluyendo los que contienen formularios, firmas o fuentes embebidas.
-      </div>
+      <p>Los originales se conservan. Si quieres borrarlos, pulsa <strong>Borrar originales</strong> en la tarjeta de resultado (pide confirmación y no se puede deshacer).</p>
     </section>
 
-    <!-- 5 COMPRIMIR -->
-    <section class="seccion" id="comprimir">
-      <h2><span class="num">5</span>Comprimir PDF</h2>
-      <div class="sep"></div>
-      <p>Reduce el tamaño de archivos PDF. El archivo comprimido se guarda en la misma carpeta del original con el sufijo <code>_compressed</code>. Se muestra la reducción conseguida, por ejemplo: <em>4.2 MB → 1.1 MB (−74%)</em>.</p>
-
-      <h3>Niveles de compresión</h3>
-      <table class="tabla">
-        <thead><tr><th>Nivel</th><th>Descripción</th><th>Uso recomendado</th></tr></thead>
-        <tbody>
-          <tr><td class="nivel">screen</td><td>Máxima compresión, calidad mínima (72 dpi)</td><td>Solo para visualizar en pantalla</td></tr>
-          <tr><td class="nivel">ebook</td><td>Buena compresión con calidad aceptable (150 dpi)</td><td>Uso general — opción por defecto</td></tr>
-          <tr><td class="nivel">printer</td><td>Compresión moderada, calidad de impresión (300 dpi)</td><td>Documentos que se van a imprimir</td></tr>
-          <tr><td class="nivel">prepress</td><td>Mínima compresión, máxima calidad</td><td>Archivos maestros o para edición posterior</td></tr>
-        </tbody>
-      </table>
-
-      <h3>Cola de archivos</h3>
-      <p>Puedes añadir varios archivos a la vez. Se procesan en orden, uno por uno. El contador del botón indica cuántos están pendientes. Puedes reordenar los archivos pendientes arrastrando.</p>
-
-      <h3>Botones de limpieza</h3>
-      <ul>
-        <li><strong>Limpiar errores</strong> — quita de la lista solo los archivos que dieron error, manteniendo los que se completaron correctamente.</li>
-        <li><strong>Limpiar todo</strong> — vacía la lista completamente.</li>
-      </ul>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Cuando todos los archivos se procesan sin errores, la lista se limpia automáticamente a los 2 segundos.
-      </div>
-    </section>
-
-    <!-- 6 OCR -->
-    <section class="seccion" id="ocr">
-      <h2><span class="num">6</span>OCR — Texto buscable</h2>
-      <div class="sep"></div>
-      <p>Añade una capa de texto invisible y buscable a documentos escaneados. El PDF resultante mantiene exactamente el mismo aspecto visual pero el texto puede buscarse, copiarse y seleccionarse. El archivo se guarda con el sufijo <code>_OCR</code>.</p>
-
-      <h3>Opciones de calidad</h3>
-
-      <table class="tabla">
-        <thead><tr><th>Resolución</th><th>Velocidad</th><th>Uso recomendado</th></tr></thead>
-        <tbody>
-          <tr><td class="nivel">150 dpi</td><td>Rápido</td><td>Documentos simples con texto grande y legible</td></tr>
-          <tr><td class="nivel">300 dpi</td><td>Normal</td><td>Uso estándar — opción por defecto</td></tr>
-          <tr><td class="nivel">600 dpi</td><td>Lento</td><td>Documentos con texto muy pequeño o detalles finos</td></tr>
-        </tbody>
-      </table>
-
-      <h3>Corrección de orientación</h3>
-      <p>El checkbox <strong>Corregir orientación</strong> activa la detección automática de orientación en Tesseract (<code>--psm 1</code>). Útil cuando los documentos escaneados están girados 90°, 180° o 270°. Añade algo de tiempo al proceso.</p>
-
-      <div class="aviso">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        El OCR puede tardar varios minutos en documentos largos. No cierres la aplicación durante el proceso: si lo intentas, aparecerá un aviso de confirmación.
-      </div>
-
-      <h3>Progreso</h3>
-      <p>Durante el OCR se muestra una barra de progreso con el número de página actual y el archivo que se está procesando: <em>Archivo 2/3 · página 8 de 22</em>. Puedes cancelar en cualquier momento (ver sección 10).</p>
-    </section>
-
-    <!-- 7 EXTRAER -->
+    <!-- 9 -->
     <section class="seccion" id="extraer">
-      <h2><span class="num">7</span>Extraer páginas</h2>
+      <h2><span class="num">9</span>Extraer páginas</h2>
       <div class="sep"></div>
-      <p>Genera un nuevo PDF con solo las páginas que indiques de un documento existente. El resultado se guarda en la misma carpeta del original con el sufijo <code>_pags_</code> seguido del rango.</p>
-
-      <ol class="pasos">
-        <li>Selecciona o arrastra el PDF sobre la tarjeta Extraer. Se mostrará el nombre, número de páginas y tamaño.</li>
-        <li>Escribe el rango de páginas en el campo de texto.</li>
-        <li>El borde del campo se pone <strong style="color:var(--verde)">verde</strong> si el rango es válido y muestra cuántas páginas se van a extraer.</li>
-        <li>Pulsa <strong>Extraer páginas</strong>.</li>
-      </ol>
-
-      <h3>Sintaxis del rango</h3>
-      <div class="codigo">
-<span class="co">// Rango continuo</span>
-<span class="cl">1-5</span>          <span class="com">→ páginas 1, 2, 3, 4 y 5</span>
-
-<span class="co">// Página suelta</span>
-<span class="cl">3</span>            <span class="com">→ solo la página 3</span>
-
-<span class="co">// Combinación</span>
-<span class="cl">1-3, 7, 10-12</span> <span class="com">→ páginas 1, 2, 3, 7, 10, 11 y 12</span>
-
-<span class="co">// Varios sueltos</span>
-<span class="cl">2, 5, 8, 11</span>  <span class="com">→ páginas 2, 5, 8 y 11</span>
-      </div>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Tras extraer, el archivo queda cargado para que puedas extraer otro rango del mismo PDF sin tener que seleccionarlo de nuevo. El campo de rango se limpia automáticamente.
-      </div>
+      <p>Elige un PDF y escribe las páginas (<code>1-3, 5, 7-9</code>) o márcalas en las miniaturas. Se guarda como <code>_pags_…</code> en la misma carpeta.</p>
     </section>
 
-
-    <!-- 8 IMÁGENES A PDF -->
-    <section class="seccion" id="imagenes">
-      <h2><span class="num">8</span>Imágenes a PDF</h2>
+    <!-- 10 -->
+    <section class="seccion" id="dividir">
+      <h2><span class="num">10</span>Dividir</h2>
       <div class="sep"></div>
-      <p>Convierte imágenes a documentos PDF con cada imagen ajustada automáticamente al tamaño A4. Compatible con JPG, JPEG, PNG, BMP, TIFF, GIF y WEBP.</p>
+      <p>Parte un PDF en varios: <strong>cada N páginas</strong> o <strong>en páginas concretas</strong> (cada número indica dónde empieza una parte nueva; también puedes marcarlas en las miniaturas). Antes de empezar se muestra qué archivos saldrán.</p>
+    </section>
 
-      <h3>Paso a paso</h3>
-      <ol class="pasos">
-        <li>Añade las imágenes arrastrándolas sobre la tarjeta o pulsa <strong>Elegir imágenes</strong>.</li>
-        <li>Reordena si es necesario arrastrando cada elemento de la lista.</li>
-        <li>Elige el modo de conversión (ver abajo).</li>
-        <li>Pulsa <strong>Convertir</strong>.</li>
-      </ol>
-
-      <h3>Modos de conversión</h3>
+    <!-- 11 -->
+    <section class="seccion" id="comprimir">
+      <h2><span class="num">11</span>Comprimir</h2>
+      <div class="sep"></div>
+      <p>Admite varios archivos a la vez. Hay dos modos:</p>
+      <ul>
+        <li><strong>Por calidad:</strong> un deslizador de <em>Archivo más pequeño</em> a <em>Mejor calidad</em>, con el tamaño estimado de cada nivel.</li>
+        <li><strong>Por tamaño máximo:</strong> indica los MB (o pulsa 1/2/5/10/20) y la app elige el nivel de mayor calidad que lo cumple. Si no se alcanza, guarda lo más pequeño posible y avisa.</li>
+      </ul>
       <table class="tabla">
-        <thead><tr><th>Modo</th><th>Resultado</th><th>Cuándo usarlo</th></tr></thead>
+        <thead><tr><th>Nivel</th><th>Resultado aproximado</th><th>Uso</th></tr></thead>
         <tbody>
-          <tr>
-            <td><strong>Un único PDF</strong> (por defecto)</td>
-            <td>Todas las imágenes en un solo archivo, una por página. Se elige dónde guardar el resultado.</td>
-            <td>Escaneos de un mismo documento que llegan como imágenes sueltas.</td>
-          </tr>
-          <tr>
-            <td><strong>PDF separado por imagen</strong></td>
-            <td>Un archivo .pdf por cada imagen, guardado en la misma carpeta con el mismo nombre.</td>
-            <td>Imágenes independientes que deben quedar como PDFs individuales.</td>
-          </tr>
+          <tr><td class="nivel">Mínimo</td><td>10-30 % del original, imágenes a 72 ppp</td><td>Correo o web</td></tr>
+          <tr><td class="nivel">Equilibrada</td><td>30-50 %, 150 ppp</td><td>Uso general (recomendado)</td></tr>
+          <tr><td class="nivel">Buena calidad</td><td>60-80 %, hasta 200 ppp</td><td>Documentos para imprimir</td></tr>
+          <tr><td class="nivel">Mejor calidad</td><td>Casi igual, sin tocar imágenes</td><td>Imprenta o archivo</td></tr>
         </tbody>
       </table>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        En modo separado, si ya existe un PDF con ese nombre la app pregunta si deseas sobrescribirlo, renombrarlo (añade _2, _3…) o cancelar esa imagen.
-      </div>
-
-      <h3>Ajuste a A4</h3>
-      <p>Cada imagen se escala para encajar dentro de una página A4 manteniendo las proporciones originales. No se recorta ningún contenido.</p>
+      <p>Nunca se entrega un archivo mayor que el original. Resultado: <code>_compressed.pdf</code>.</p>
     </section>
 
-    <!-- 9 ARCHIVOS EN USO -->
-    <section class="seccion" id="archivos-uso">
-      <h2><span class="num">9</span>Archivos en uso</h2>
+    <!-- 12 -->
+    <section class="seccion" id="ocr">
+      <h2><span class="num">12</span>OCR</h2>
       <div class="sep"></div>
-      <p>Antes de procesar cualquier archivo, la app comprueba si está siendo utilizado por otro programa (por ejemplo, si el PDF está abierto en Adobe Acrobat o en el visor de PDF).</p>
-      <p>Si el archivo está en uso, aparece un diálogo con dos opciones:</p>
+      <p>Añade texto buscable y copiable a PDF escaneados (en español). Elige la <strong>resolución de lectura</strong>: 150 ppp (rápido), 300 ppp (recomendado) o 600 ppp (letra muy pequeña; más lento). <strong>Corregir orientación</strong> endereza páginas escaneadas del revés o de lado. Resultado: <code>_OCR.pdf</code>.</p>
+    </section>
+
+    <!-- 13 -->
+    <section class="seccion" id="imagenes">
+      <h2><span class="num">13</span>Imágenes a PDF</h2>
+      <div class="sep"></div>
+      <p>Convierte JPG, PNG, HEIC (fotos de iPhone), TIFF, WEBP, BMP y GIF en PDF tamaño A4, sin recortar. Elige <strong>Un único PDF</strong> (todas las imágenes, una por página, en el orden de la lista) o <strong>Un PDF por imagen</strong> (junto a cada imagen).</p>
+    </section>
+
+    <!-- 14 -->
+    <section class="seccion" id="office">
+      <h2><span class="num">14</span>Office a PDF</h2>
+      <div class="sep"></div>
+      <p>Convierte documentos de <strong>Word</strong> (DOCX, DOC, RTF, ODT, TXT), <strong>Excel</strong> (XLSX, XLS, CSV, ODS) y <strong>PowerPoint</strong> (PPTX, PPT, PPSX, ODP) en PDF usando el <strong>Microsoft Office instalado en el equipo</strong>. El resultado es el mismo que con <em>Archivo → Guardar como → PDF</em>. Arriba se indica qué versión de Office se está usando.</p>
+      <p>También puedes soltar un documento de Office en cualquier parte de la ventana: se envía solo a esta herramienta (salvo en Lotes, que también los admite). Para convertir carpetas enteras, y de paso firmarlas o imprimirlas, usa Lotes (sección 18).</p>
+      <h3>Opciones</h3>
       <ul>
-        <li><strong>Cancelar — lo cierro yo:</strong> la operación se cancela y puedes cerrar el programa tú mismo antes de intentarlo de nuevo.</li>
-        <li><strong>Cerrar programa y continuar:</strong> la app cierra automáticamente el programa que tiene el archivo abierto y continúa la operación.</li>
+        <li><strong>Word · marcadores a partir de los títulos:</strong> el PDF tendrá un índice navegable con los títulos del documento (estilos Título 1, 2…).</li>
+        <li><strong>Excel · todo el libro o solo la hoja activa.</strong> El PDF respeta el área de impresión y la configuración de página de cada hoja. Si las tablas salen partidas en varias hojas, marca <strong>Ajustar cada hoja a una página de ancho</strong>.</li>
+        <li><strong>PowerPoint:</strong> diapositivas, páginas de notas (la diapositiva con las notas del orador) o documento con 2, 3 (con líneas para notas) o 6 diapositivas por hoja.</li>
+        <li><strong>Resultado:</strong> junto a cada documento o en otra carpeta; opcionalmente en <strong>PDF/A</strong> (conservación a largo plazo; no disponible para Excel) y <strong>unido en un solo PDF</strong> («Documentos convertidos.pdf»).</li>
       </ul>
-
-      <div class="aviso">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Si eliges cerrar el programa automáticamente, perderás cualquier cambio no guardado en ese programa.
-      </div>
+      <h3>Seguridad y casos especiales</h3>
+      <ul>
+        <li>El original no se toca: Office abre una <strong>copia en solo lectura</strong>, de forma invisible y con las <strong>macros desactivadas</strong>. Puedes convertir un documento aunque lo tengas abierto.</li>
+        <li>Los documentos con <strong>contraseña de apertura</strong> se saltan con un aviso: quita la contraseña en Office y vuelve a intentarlo.</li>
+        <li>Si Office no responde en 2 minutos (por ejemplo, porque el documento muestra un aviso al abrirse), se cierra el Word, Excel o PowerPoint de la conversión y se pasa al siguiente. Nunca se cierra un Office que tuvieras abierto tú.</li>
+        <li>Necesita Office 2010 o posterior (Office 2007 solo con el Service Pack 2). No funciona con Office solo web ni con un Office sin activar.</li>
+      </ul>
     </section>
 
-    <!-- 10 ARCHIVOS PROTEGIDOS -->
-    <section class="seccion" id="protegidos">
-      <h2><span class="num">10</span>Archivos protegidos y corruptos</h2>
+    <!-- 15 -->
+    <section class="seccion" id="marca">
+      <h2><span class="num">15</span>Marca de agua y numeración</h2>
       <div class="sep"></div>
-
-      <h3>PDF protegido con contraseña</h3>
-      <p>Si un PDF tiene contraseña de apertura, la app lo detecta antes de procesarlo y lo marca con un icono de candado en la lista. La operación se cancela para ese archivo con el mensaje <em>PDF protegido con contraseña</em>.</p>
-
-      <h3>PDF corrupto o inválido</h3>
-      <p>Si un archivo no puede abrirse porque está dañado o no es un PDF válido, se marca en rojo en la lista de Combinar con el mensaje <em>corrupto o inválido</em>.</p>
-
-      <h3>En Combinar: continuar con los válidos</h3>
-      <p>Si en la lista de Combinar hay archivos problemáticos pero también archivos válidos, aparece un diálogo preguntando si deseas continuar con los válidos o cancelar la operación completa.</p>
+      <p>Añade una <strong>marca de agua</strong> (texto, tamaño, opacidad, color y ángulo; con atajos como CONFIDENCIAL, COPIA o BORRADOR) y/o <strong>números de página</strong> (formato, posición y desde qué número), en todas las páginas o en un rango. La vista previa muestra el resultado antes de guardar. Respeta páginas giradas y recortadas.</p>
+      <div class="nota">Si solo quieres la marca en el <strong>papel</strong> y no en el archivo, usa la opción «Solo en la copia impresa» del panel Imprimir (sección 19).</div>
     </section>
 
-    <!-- 11 CANCELAR -->
-    <section class="seccion" id="cancelar">
-      <h2><span class="num">11</span>Cancelar una operación</h2>
+    <!-- 16 -->
+    <section class="seccion" id="formulario">
+      <h2><span class="num">16</span>Rellenar formulario</h2>
       <div class="sep"></div>
-      <p>Durante cualquier procesamiento aparece una barra naranja en la parte superior con el botón <strong>Cancelar operación</strong> y el tiempo estimado restante.</p>
-      <p>Al cancelar, el proceso activo se detiene en el menor tiempo posible. Los archivos ya procesados correctamente antes de la cancelación quedan guardados; el archivo que estaba en proceso queda incompleto y se marca como error.</p>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        También puedes pulsar <kbd>Escape</kbd> para cancelar la operación en curso.
-      </div>
-
-      <h3>Cerrar la app con proceso activo</h3>
-      <p>Si intentas cerrar la ventana mientras hay una operación en curso, aparece un diálogo de confirmación. Si cierras de todas formas, el proceso se interrumpe y el archivo en proceso puede quedar incompleto.</p>
+      <p>Para PDF con campos (AcroForm): rellena textos, casillas, opciones y listas, con vista previa. <strong>Aplanar</strong> convierte los campos en contenido fijo, para que no se puedan modificar. Resultado: <code>_rellenado.pdf</code> o <code>_plano.pdf</code>.</p>
     </section>
 
-    <!-- 12 REGISTRO -->
+    <!-- 17 -->
+    <section class="seccion" id="metadatos">
+      <h2><span class="num">17</span>Metadatos y limpieza</h2>
+      <div class="sep"></div>
+      <p>Muestra y permite editar título, autor, asunto y palabras clave. Antes de enviar un documento fuera, puede quitar los datos del documento, los metadatos XMP, marcadores, adjuntos, JavaScript y comentarios. Resultado: <code>_limpio.pdf</code>.</p>
+    </section>
+
+    <!-- 18 -->
+    <section class="seccion" id="lotes">
+      <h2><span class="num">18</span>Lotes y perfiles</h2>
+      <div class="sep"></div>
+      <p>Aplica una cadena de pasos a muchos PDF (y documentos de Word, Excel y PowerPoint) a la vez: una carpeta (con subcarpetas si quieres, conservando su estructura) o varios archivos sueltos.</p>
+      <ol class="pasos">
+        <li><strong>Archivos de origen:</strong> elige una carpeta o los archivos.</li>
+        <li><strong>Perfil:</strong> elige uno o crea el tuyo con los pasos que necesites: convertir Word/Excel/PowerPoint a PDF, comprimir, OCR, marca de agua y numeración, limpiar metadatos, aplanar formularios, firmar e imprimir. Los perfiles se guardan.</li>
+        <li><strong>Salida:</strong> la carpeta donde se guardan los resultados (por defecto, <code>procesados</code>) y, si quieres, un texto que añadir al nombre.</li>
+      </ol>
+      <ul>
+        <li>El paso <strong>Convertir Word/Excel/PowerPoint a PDF</strong> va siempre el primero y usa el Office del equipo, con las mismas opciones que la herramienta Office a PDF (sección 14). Los PDF que ya hubiera en la carpeta pasan sin cambios, o se dejan fuera si marcas «Procesar solo los documentos de Office». Ejemplo listo para usar: el perfil <em>Word/Excel/PowerPoint a PDF y firmar</em>.</li>
+        <li>Si la carpeta tiene documentos de Office y el perfil no los convierte, se avisa y se ofrece añadir el paso con un clic.</li>
+        <li>La <strong>firma</strong> va siempre después de cualquier paso que modifique el PDF (si no, la invalidaría). El certificado se abre una sola vez para todo el lote.</li>
+        <li>El paso <strong>Imprimir</strong> imprime el PDF tal como está en ese punto, con la impresora, copias, doble cara, color y marca solo en la copia impresa que elijas. Puede ir después de la firma. Si falla, el archivo se guarda igualmente y se avisa.</li>
+      </ul>
+      <p>Los originales no se tocan. Al terminar se ve el resultado de cada archivo y el ahorro de espacio.</p>
+    </section>
+
+    <!-- 19 -->
+    <section class="seccion" id="imprimir">
+      <h2><span class="num">19</span>Imprimir</h2>
+      <div class="sep"></div>
+      <p>Pulsa <kbd>Ctrl+P</kbd>, el botón <strong>Imprimir</strong> del visor, el de la tarjeta de resultado o <em>Archivo › Imprimir</em>. En Organizar, si hay páginas seleccionadas, el botón pasa a <strong>Imprimir selección</strong>.</p>
+      <h3>Opciones</h3>
+      <ul>
+        <li>Impresora (la predeterminada aparece marcada), copias e intercalado.</li>
+        <li>Páginas: todas o un rango (<code>1-3, 5</code>).</li>
+        <li>Doble cara (borde largo o corto), color o blanco y negro, páginas por hoja (1 a 16) y orientación.</li>
+        <li><strong>Solo en la copia impresa:</strong> una marca de agua (por ejemplo «COPIA») y/o la fecha y hora de impresión al pie. El archivo no se modifica.</li>
+      </ul>
+      <p>Los ajustes se recuerdan para la próxima vez.</p>
+      <h3>Cómo imprime</h3>
+      <p>Por defecto usa el motor de PDF de Windows (el de Edge), que imprime con el texto nítido y sin instalar nada. Si falla, prueba solo con SumatraPDF (si está en UTILS) y después con Ghostscript; el aviso final dice qué método se usó.</p>
+      <ul>
+        <li><strong>Opciones avanzadas › Envío directo:</strong> manda el PDF tal cual a impresoras de oficina que entienden PDF (muchas HP, Ricoh, Kyocera, Konica…). Es lo más rápido. Se recuerda para cada impresora. <em>Si la impresora no lo admite, saldrán hojas con símbolos.</em></li>
+        <li><strong>Diálogo de Windows…:</strong> abre el documento con el diálogo de impresión del sistema, para bandejas, grapado y otras opciones propias de la impresora.</li>
+      </ul>
+      <h3>¿Acepta PDF la impresora?</h3>
+      <p>Al marcar <em>Envío directo</em>, la app se lo pregunta a la impresora por la red (por IPP y, si no contesta, por SNMP) y muestra el resultado:</p>
+      <ul>
+        <li><strong>Acepta PDF:</strong> puedes usar el envío directo.</li>
+        <li><strong>No acepta PDF:</strong> aparecen los lenguajes que sí admite (PCL, PostScript…). No uses el envío directo; si lo intentas, la app pide confirmación. Con <em>Usar «Automático» con esta impresora</em> se vuelve al método normal.</li>
+        <li><strong>No se ha podido comprobar:</strong> la impresora no ha contestado o no se sabe su dirección (por ejemplo, si está compartida a través de un servidor de impresión, conectada por WSD o por USB). Escribe su <strong>IP</strong> (la ves en el panel de la propia impresora o en su hoja de configuración) y pulsa <em>Comprobar</em>, o haz una prueba con una sola página.</li>
+      </ul>
+      <p>El resultado se recuerda para cada impresora; <em>Volver a comprobar</em> lo repite.</p>
+      <div class="nota">Si el documento del visor tiene cambios sin aplicar, se imprime la versión guardada y el panel lo avisa.</div>
+    </section>
+
+    <!-- 20 -->
+    <section class="seccion" id="resultados">
+      <h2><span class="num">20</span>Resultados y archivos de salida</h2>
+      <div class="sep"></div>
+      <p>Al terminar, una tarjeta muestra el archivo generado con <strong>Ver en el visor</strong>, <strong>Imprimir</strong>, <strong>Abrir carpeta</strong>, <strong>Abrir con…</strong> (programa predeterminado), <strong>Copiar ruta</strong> y <strong>Borrar copia</strong> (por si no era lo que querías). En el visor aparece además un aviso flotante.</p>
+      <table class="tabla">
+        <thead><tr><th>Operación</th><th>Nombre del resultado</th></tr></thead>
+        <tbody>
+          <tr><td class="nivel">Comprimir</td><td><code>nombre_compressed.pdf</code></td></tr>
+          <tr><td class="nivel">OCR</td><td><code>nombre_OCR.pdf</code></td></tr>
+          <tr><td class="nivel">Extraer</td><td><code>nombre_pags_1-3-5.pdf</code></td></tr>
+          <tr><td class="nivel">Organizar</td><td><code>nombre_editado.pdf</code></td></tr>
+          <tr><td class="nivel">Anotar</td><td><code>nombre_anotado.pdf</code></td></tr>
+          <tr><td class="nivel">Firmar</td><td><code>nombre_firmado.pdf</code></td></tr>
+          <tr><td class="nivel">Marca / numeración</td><td><code>_marcado</code>, <code>_marca</code> o <code>_numerado</code></td></tr>
+          <tr><td class="nivel">Formulario</td><td><code>_rellenado</code> o <code>_plano</code></td></tr>
+          <tr><td class="nivel">Metadatos</td><td><code>nombre_limpio.pdf</code></td></tr>
+          <tr><td class="nivel">Combinar e Imágenes</td><td>el nombre que elijas al guardar</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 21 -->
+    <section class="seccion" id="problemas">
+      <h2><span class="num">21</span>Archivos en uso, protegidos o dañados</h2>
+      <div class="sep"></div>
+      <ul>
+        <li><strong>En uso:</strong> si otro programa (Acrobat, Word…) tiene abierto el archivo, la app dice cuál y ofrece cerrarlo. Si lo cierra ella, se pierden los cambios sin guardar en ese programa.</li>
+        <li><strong>Protegidos con contraseña:</strong> se marcan con un candado y no se procesan; quita antes la protección.</li>
+        <li><strong>Dañados:</strong> se avisa y se omiten. Prueba a abrirlos con otro programa o a repararlos.</li>
+        <li><strong>Cancelar:</strong> durante una operación larga, la barra superior muestra el avance, el tiempo restante y <strong>Cancelar operación</strong> (o pulsa <kbd>Esc</kbd>).</li>
+      </ul>
+    </section>
+
+    <!-- 22 -->
     <section class="seccion" id="registro">
-      <h2><span class="num">12</span>Registro de actividad</h2>
+      <h2><span class="num">22</span>Registro, log e historial</h2>
       <div class="sep"></div>
-      <p>La parte inferior de la pantalla muestra un registro de todas las operaciones de la sesión actual con la hora exacta de cada evento. Las líneas tienen tres tipos:</p>
-      <ul>
-        <li><strong style="color:var(--verde)">Verde</strong> — operación completada correctamente.</li>
-        <li><strong style="color:var(--error)">Rojo</strong> — error durante el procesamiento.</li>
-        <li><strong style="color:var(--gris-claro)">Gris</strong> — información general (archivo añadido, operación iniciada…).</li>
-      </ul>
-
-      <h3>Log persistente en disco</h3>
-      <p>Además del registro en pantalla, cada línea se escribe automáticamente en el archivo <code>pdftool.log</code> junto al ejecutable. Este archivo acumula entradas entre sesiones, por lo que puedes revisar qué se procesó en días anteriores.</p>
-      <p>Para ver el log desde la propia app, pulsa el botón <strong>Ver log completo</strong> en la parte inferior de la pantalla.</p>
-
-      <div class="arbol">
-<span class="ruta">P:\APPS\PDFTOOLS\pdftool.log</span>
-
-2026-07-19 09:14:22 [OK  ] escaneo_enero_compressed.pdf — 4.2 MB → 1.1 MB
-2026-07-19 09:15:01 [INFO] OCR [1/3]: acta_reunion_01.pdf
-2026-07-19 09:16:48 [OK  ] Generado: acta_reunion_01_OCR.pdf
-2026-07-19 09:17:03 [ERR ] PDF protegido con contraseña: expediente.pdf
-      </div>
+      <p>El último mensaje aparece en la barra de estado; si es un error, se muestra también en un aviso. Bajo cada herramienta, <strong>Registro de actividad</strong> lista lo ocurrido en la sesión y <strong>Procesados esta sesión</strong> los últimos archivos generados.</p>
+      <p>Para ver el log completo, usa <strong>Ayuda › Ver log</strong>, o haz clic en el último mensaje de la barra de estado (abajo). Se guarda un log por día en <code>logs\pdftool_AAAA-MM-DD.log</code> junto al programa, y los de más de 30 días se borran solos.</p>
     </section>
 
-    <!-- 13 HISTORIAL -->
-    <section class="seccion" id="historial">
-      <h2><span class="num">13</span>Historial de sesión</h2>
+    <!-- 23 -->
+    <section class="seccion" id="atajos">
+      <h2><span class="num">23</span>Atajos de teclado</h2>
       <div class="sep"></div>
-      <p>Bajo el registro de actividad aparece un panel desplegable <strong>Procesados esta sesión</strong> que muestra los últimos 5 archivos generados con éxito, la hora y un botón <strong>Abrir</strong> para acceder directamente al archivo.</p>
-
-      <div class="nota">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        El historial es solo de la sesión actual: al cerrar la app desaparece. Para un registro permanente, consulta el archivo <code>pdftool.log</code>.
-      </div>
+      <table class="tabla">
+        <thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
+        <tbody>
+          <tr><td class="nivel">Ctrl+K</td><td>Buscar herramienta, acción o archivo reciente</td></tr>
+          <tr><td class="nivel">Ctrl+O</td><td>Abrir PDF</td></tr>
+          <tr><td class="nivel">Ctrl+P</td><td>Imprimir</td></tr>
+          <tr><td class="nivel">Ctrl+W</td><td>Cerrar el documento</td></tr>
+          <tr><td class="nivel">Ctrl+B</td><td>Contraer o ampliar el menú lateral</td></tr>
+          <tr><td class="nivel">Ctrl+Z / Ctrl+Y</td><td>Deshacer / rehacer (Organizar)</td></tr>
+          <tr><td class="nivel">Ctrl+A</td><td>Seleccionar todas las páginas (Organizar)</td></tr>
+          <tr><td class="nivel">Supr</td><td>Eliminar páginas o anotación seleccionada</td></tr>
+          <tr><td class="nivel">?</td><td>Ver los atajos</td></tr>
+          <tr><td class="nivel">Esc</td><td>Cerrar diálogos / cancelar la operación en curso</td></tr>
+        </tbody>
+      </table>
     </section>
 
-
-    <!-- 14 FAQ -->
+    <!-- 24 -->
     <section class="seccion" id="faq">
-      <h2><span class="num">14</span>Preguntas frecuentes</h2>
+      <h2><span class="num">24</span>Preguntas frecuentes</h2>
       <div class="sep"></div>
-
-      <div class="faq-item">
-        <div class="faq-preg">La app tarda en mostrar los números de páginas al añadir archivos</div>
-        <div class="faq-resp">Es normal. La información de páginas y tamaño se carga en segundo plano para no bloquear la interfaz. Mientras carga se muestra <code>···</code> en la lista; en cuanto termina aparece el número de páginas.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">El PDF combinado da error al abrirlo</div>
-        <div class="faq-resp">Uno de los archivos fuente puede estar corrupto o protegido. La app lo detecta antes de combinar y lo indica en rojo. Quítalo de la lista y vuelve a intentarlo.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">El OCR tarda mucho</div>
-        <div class="faq-resp">El OCR rasteriza cada página a imagen (según el DPI seleccionado) y luego la reconoce con Tesseract. Documentos de 20 o más páginas con 300 dpi pueden tardar varios minutos. Para acelerar, prueba con 150 dpi si la calidad del documento lo permite.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">No aparecen las versiones de GS/Tesseract en la barra superior</div>
-        <div class="faq-resp">La carpeta UTILS no está en la ruta correcta o los ejecutables están dentro de una subcarpeta adicional. Revisa la estructura descrita en la sección 3 de este manual.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">El botón de Combinar, Comprimir u OCR está desactivado</div>
-        <div class="faq-resp">No hay archivos pendientes en la cola (todos ya se procesaron), o hay una operación en curso. Espera a que termine o pulsa Cancelar operación.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">Añado el mismo archivo dos veces y la app lo ignora</div>
-        <div class="faq-resp">En Comprimir y OCR, los archivos duplicados se ignoran para evitar procesar el mismo archivo dos veces por error. Si necesitas procesarlo de nuevo, quítalo de la lista y vuelve a añadirlo.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">La extracción de páginas falla con ciertos PDF</div>
-        <div class="faq-resp">El proceso de extracción usa Ghostscript, que es compatible con la gran mayoría de formatos PDF. Si falla, el PDF puede estar protegido contra edición. En ese caso habla con el Servicio de Informática para desbloquear el archivo primero.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-preg">¿Dónde se guardan los archivos generados?</div>
-        <div class="faq-resp">Cada operación guarda el resultado en la misma carpeta del archivo original con un sufijo descriptivo: <code>_compressed</code>, <code>_OCR</code> o <code>_pags_X-Y</code>. En Combinar, tú eliges dónde guardar el resultado en el diálogo de guardado.</div>
-      </div>
-
+      <div class="faq-item"><div class="faq-preg">¿Dónde se guardan los resultados?</div>
+        <div class="faq-resp">En la misma carpeta que el original, con un sufijo (sección 20). En Combinar e Imágenes a PDF eliges tú dónde; en Office a PDF, junto al documento o en la carpeta que elijas. En Lotes, en la carpeta de salida indicada.</div></div>
+      <div class="faq-item"><div class="faq-preg">He tachado un dato pero lo sigo viendo al copiar el texto.</div>
+        <div class="faq-resp">Asegúrate de usar la herramienta <strong>Tachar</strong> de Anotar (no un resaltado negro) y de abrir el archivo <code>_anotado</code> que se genera; en el original el dato sigue estando.</div></div>
+      <div class="faq-item"><div class="faq-preg">El buscador dice que el PDF no tiene texto.</div>
+        <div class="faq-resp">Es un escaneo (imagen). Pásale el OCR y busca en el archivo <code>_OCR</code>.</div></div>
+      <div class="faq-item"><div class="faq-preg">La firma con DNIe falla o se cancela.</div>
+        <div class="faq-resp">Comprueba que el lector está conectado y la tarjeta insertada, e introduce el PIN cuando Windows lo pida. Si el certificado está caducado, la app lo indica.</div></div>
+      <div class="faq-item"><div class="faq-preg">No consigo imprimir.</div>
+        <div class="faq-resp">El panel muestra qué falló con cada método. Prueba <strong>Diálogo de Windows…</strong>; si funciona, el problema está en el motor elegido: cambia el método en <em>Opciones avanzadas</em>. Si la impresora «no está disponible», revisa que esté encendida y conectada.</div></div>
+      <div class="faq-item"><div class="faq-preg">Al usar «Envío directo» salen hojas con símbolos raros.</div>
+        <div class="faq-resp">Esa impresora no interpreta PDF. Cancela el trabajo en la cola de impresión y vuelve al método <em>Automático</em> para esa impresora. Para evitarlo, mira el resultado de la comprobación que aparece al marcar el envío directo.</div></div>
+      <div class="faq-item"><div class="faq-preg">Pide un código de usuario o de departamento para imprimir.</div>
+        <div class="faq-resp">El envío directo no pasa por el driver de Windows, que es quien añade ese código, así que la impresora rechazará o retendrá el trabajo. En esas impresoras usa <em>Automático</em>.</div></div>
+      <div class="faq-item"><div class="faq-preg">¿Se pierde calidad al comprimir?</div>
+        <div class="faq-resp">Depende del nivel: <em>Mejor calidad</em> no toca las imágenes; los demás las reducen. El texto sigue siendo nítido en todos los niveles.</div></div>
+      <div class="faq-item"><div class="faq-preg">La app no cierra.</div>
+        <div class="faq-resp">Si hay una operación en curso o cambios sin aplicar en el visor, pregunta antes de cerrar. Pulsa «Cerrar de todas formas» o vuelve y guarda.</div></div>
     </section>
 
   </main>
 </div>
-
-<script>
-// Marcar enlace activo en el sidebar al hacer scroll
-const secciones = document.querySelectorAll('.seccion');
-const links = document.querySelectorAll('.nav-link');
-function actualizarNav() {
-  let actual = '';
-  secciones.forEach(s => { if (window.scrollY >= s.offsetTop - 80) actual = s.id; });
-  links.forEach(l => {
-    l.classList.toggle('activo', l.getAttribute('href') === '#' + actual);
-  });
-}
-window.addEventListener('scroll', actualizarNav);
-actualizarNav();
-
-// Interceptar clicks en enlaces internos (#id) para evitar que la navegación
-// nativa del enlace llegue a la ventana principal de Tauri (WebView2 dispara
-// el evento de navegación aunque el iframe esté en sandbox). Hacemos el
-// scroll manualmente y así nunca se produce una navegación real.
-document.querySelectorAll('a[href^="#"]').forEach(function (enlace) {
-  enlace.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = enlace.getAttribute('href').slice(1);
-    const destino = document.getElementById(id);
-    if (destino) {
-      destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState(null, '', '#' + id);
-    }
-  });
-});
-</script>
-
 </body>
 </html>

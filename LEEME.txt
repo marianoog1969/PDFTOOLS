@@ -1,50 +1,62 @@
-PDF Tool v2.0.4
-===============
-Servicio de Informática — CIS Guillermo Miranda — Murcia
+PDF Tool v3.11.1
+================
+Servicio de Informatica - CIS Guillermo Miranda - Murcia
 
-ARCHIVOS NECESARIOS
--------------------
-La aplicación necesita la carpeta UTILS junto al .exe con la siguiente estructura:
+Ver, organizar, anotar, firmar, combinar, comprimir, OCR, imprimir,
+convertir Word/Excel/PowerPoint a PDF y procesar PDF por lotes, sin conexion a internet. Los originales no se
+modifican: cada operacion crea un archivo nuevo.
+
+INSTALACION
+-----------
+No necesita instalador. Copia la carpeta del programa con esta estructura:
 
   pdftool.exe
   LEEME.txt
   UTILS\
-    gs\
-      bin\
-        gswin64c.exe
-        gsdll64.dll
-        VCRUNTIME140.dll       <- necesario en equipos sin Visual C++ instalado
-        VCRUNTIME140_1.dll     <- idem
-        MSVCP140.dll           <- idem
-    tesseract\
-      tesseract.exe
-      tessdata\
-        spa.traineddata
+    gs\                    <- carpeta de instalacion COMPLETA de Ghostscript
+      bin\gswin64c.exe
+      bin\gsdll64.dll
+      lib\  Resource\  ...
+    tesseract\             <- carpeta de instalacion COMPLETA de Tesseract
+      tesseract.exe  *.dll
+      tessdata\spa.traineddata
+    sumatra\               <- OPCIONAL (respaldo para imprimir)
+      SumatraPDF.exe        (version portable)
 
-Si falta la carpeta UTILS o los ejecutables, las operaciones de
-Combinar, Comprimir, OCR y Extraer no funcionarán.
+La carpeta UTILS tambien puede estar en la red: P:\APPS\PDFTOOLS\UTILS
+
+Que necesita cada componente:
+  - Ghostscript: ver paginas, comprimir, OCR, extraer, dividir e imprimir
+    (respaldo). Combinar, firmar, marca de agua, formularios y metadatos
+    funcionan sin el, pero sin vista previa de las paginas.
+  - Tesseract: solo OCR.
+  - SumatraPDF: opcional; la impresion funciona sin el.
+  - Microsoft Office (2010 o posterior, instalado en el equipo): solo para
+    "Office a PDF". No hay que copiar nada a UTILS.
+
+Requisitos: Windows 10/11 de 64 bits con WebView2 Runtime (incluido en
+Windows 11 y en Windows 10 actualizado).
+
+Si falta algo, la barra de estado de la app muestra «Falta Ghostscript»
+(clic para abrir la carpeta UTILS).
 
 PROBLEMA: "Can't load Ghostscript DLL"
----------------------------------------
-Si aparece este error, el equipo no tiene instalado el
-Visual C++ Redistributable de Microsoft.
+--------------------------------------
+El equipo no tiene el Visual C++ Redistributable de Microsoft.
 
-Solución A — Instalar el redistribuible:
+Solucion A - Instalar el redistribuible:
   https://aka.ms/vs/17/release/vc_redist.x64.exe
 
-Solución B — Copiar las DLLs desde un equipo donde funcione:
-  Copiar de C:\Windows\System32\ al directorio UTILS\gs\bin\ :
-    - VCRUNTIME140.dll
-    - VCRUNTIME140_1.dll
-    - MSVCP140.dll
+Solucion B - Copiar estas DLL de C:\Windows\System32\ a UTILS\gs\bin\ :
+  VCRUNTIME140.dll, VCRUNTIME140_1.dll, MSVCP140.dll
 
-MANUAL
-------
-El manual de usuario está disponible en:
-  P:\APPS\PDFTOOLS\manual_pdftool_v2.0.1.html
-  (abrir con cualquier navegador)
+MANUAL Y REGISTRO
+-----------------
+El manual completo esta dentro de la aplicacion: Ayuda > Manual de usuario.
+El registro de cada dia se guarda en logs\pdftool_AAAA-MM-DD.log junto al
+programa (se borran solos los de mas de 30 dias).
 
 CONTACTO
 --------
-Servicio de Informática
-CIS Guillermo Miranda — Murcia
+Servicio de Informatica
+CIS Guillermo Miranda - Murcia

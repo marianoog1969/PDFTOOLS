@@ -49,15 +49,17 @@ export default function AnotadorPdf({ ruta, total, minis: minisExt, anotaciones,
   const hojaRef = useRef<HTMLDivElement | null>(null);
   const capaRef = useRef<HTMLDivElement | null>(null);
 
+  // Solo importa si las miniaturas vienen de fuera o no, no su contenido: así no se recargan en cada render.
+  const hayMinisExt = !!minisExt;
   useEffect(() => {
-    if (minisExt) { setActual(1); setImg(null); setError(null); setSeleccionada(null); setEditando(null); return; }
+    if (hayMinisExt) { setActual(1); setImg(null); setError(null); setSeleccionada(null); setEditando(null); return; }
     let vivo = true;
     setMinis([]); setActual(1); setImg(null); setError(null); setSeleccionada(null); setEditando(null);
     invoke<string[]>("miniaturas_visor", { entrada: ruta, dpi: 36 })
       .then((m) => { if (vivo) setMinis(m); })
       .catch((e) => { if (vivo) setError(String(e)); });
     return () => { vivo = false; };
-  }, [ruta, !!minisExt]);
+  }, [ruta, hayMinisExt]);
 
   useEffect(() => {
     let vivo = true;
