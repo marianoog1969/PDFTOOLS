@@ -1,5 +1,8 @@
 # Changelog — PDF Tool
 
+## 3.12.1
+- Arranque más rápido: la limpieza de carpetas temporales antiguas y la anotación de inicio en el log ya no bloquean la apertura de la ventana (en una unidad de red listar la carpeta del programa tardaba).
+
 ## 3.12.0
 - **Se elimina toda la firma digital** (firmar con certificado/DNIe, validar firmas, sello de tiempo y LTV): la validación cerraba la aplicación por un fallo dentro de CRYPT32.dll de Windows.
   - Fuera la pestaña «Firmar» del visor y su acceso en la portada, el menú Herramientas y Ctrl+K.

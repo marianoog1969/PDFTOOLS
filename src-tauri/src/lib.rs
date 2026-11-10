@@ -2167,7 +2167,6 @@ async fn convertir_office(app: tauri::AppHandle, entrada: String, salida: String
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     instalar_gancho_panico();
-    registrar_error("INICIO", "aplicación iniciada");
     tauri::Builder::default()
         .manage(EstadoApp::default())
         .plugin(tauri_plugin_dialog::init())
@@ -2175,7 +2174,12 @@ pub fn run() {
             // Limpia carpetas temporales huérfanas de ejecuciones anteriores
             // (cierres inesperados, o quedadas de versiones previas con el bug
             // de limpieza tras cancelar OCR).
-            limpiar_temporales_huerfanos();
+            // Se hace en segundo plano: el programa suele estar en una unidad de red y listar su carpeta
+            // (o borrar restos allí) retrasaba la aparición de la ventana.
+            std::thread::spawn(|| {
+                registrar_error("INICIO", "aplicación iniciada");
+                limpiar_temporales_huerfanos();
+            });
             Ok(())
         })
         .on_window_event(|window, event| {
