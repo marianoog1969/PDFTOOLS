@@ -697,14 +697,18 @@ pub mod capi {
             let punteros = [datos.as_ptr()];
             let largos = [datos.len() as u32];
             let mut firmante: *const CertContext = null();
+            crate::registrar_error("TRAZA", "capi: 1 CryptVerifyDetachedMessageSignature…");
             let ok = CryptVerifyDetachedMessageSignature(&vp, 0, cms.as_ptr(), cms.len() as u32, 1, punteros.as_ptr(), largos.as_ptr(), &mut firmante) != 0;
+            crate::registrar_error("TRAZA", &format!("capi: 1 listo (firma_ok={}, firmante nulo={})", ok, firmante.is_null()));
             let mut v = crate::validar::Veredicto { firma_ok: ok, ..Default::default() };
             if !ok || firmante.is_null() { return Ok(v); }
             // Almacén temporal con los certificados incluidos en la firma (intermedios)
+            crate::registrar_error("TRAZA", "capi: 2 CertOpenStore…");
             let mem = CertOpenStore(2 /* CERT_STORE_PROV_MEMORY */, 0, 0, 0, null());
             if !mem.is_null() {
                 for c in certs { CertAddEncodedCertificateToStore(mem, ENC, c.as_ptr(), c.len() as u32, 4 /* ADD_ALWAYS */, null_mut()); }
             }
+            crate::registrar_error("TRAZA", &format!("capi: 2 listo (almacén nulo={}); añadiendo {} certificado(s)", mem.is_null(), certs.len()));
             let para = ChainPara {
                 cb_size: std::mem::size_of::<ChainPara>() as u32,
                 uso: UsageMatch { tipo: 0, n: 0, ids: null_mut() },
@@ -714,11 +718,15 @@ pub mod capi {
             let ft = unix.map(|u| { let t = ((u + 11_644_473_600) as u64) * 10_000_000; FileTime { lo: (t & 0xFFFF_FFFF) as u32, hi: (t >> 32) as u32 } });
             let flags: u32 = if revocacion { 0x2000_0000 } else { 0 }; // CERT_CHAIN_REVOCATION_CHECK_CHAIN
             let mut ctx: *mut ChainCtx = null_mut();
+            crate::registrar_error("TRAZA", &format!("capi: 3 CertGetCertificateChain… (tamaño ChainPara={}, hora={:?})", std::mem::size_of::<ChainPara>(), unix));
             let r = CertGetCertificateChain(null_mut(), firmante, ft.as_ref().map(|f| f as *const FileTime as *const c_void).unwrap_or(null()), mem, &para, flags, null_mut(), &mut ctx);
+            crate::registrar_error("TRAZA", &format!("capi: 3 listo (r={}, ctx nulo={})", r, ctx.is_null()));
             if r != 0 && !ctx.is_null() { v.cadena_construida = true; v.error_cadena = (*ctx).err; CertFreeCertificateChain(ctx); }
             else { v.error_cadena = 0x10000; }
+            crate::registrar_error("TRAZA", "capi: 4 liberando…");
             CertFreeCertificateContext(firmante);
             if !mem.is_null() { CertCloseStore(mem, 0); }
+            crate::registrar_error("TRAZA", "capi: 4 listo");
             Ok(v)
         }
     }

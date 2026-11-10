@@ -1,5 +1,8 @@
 # Changelog — PDF Tool
 
+## 3.11.3
+- Diagnóstico del cierre al validar firmas (fallo dentro de CRYPT32.dll, 0xc0000005): `errores.log` anota ahora cada llamada a Windows de la validación (verificar firma, almacén temporal, cadena de certificados, liberación) para localizar cuál lo provoca. Sin cambios de funcionamiento.
+
 ## 3.11.2
 - **Registro de errores** (`logs\errores.log`, junto al programa; menú Ayuda → «Ver log de errores»): anota los fallos internos, incluidos los que cierran la aplicación sin aviso (pánicos de Rust con ubicación y pila de llamadas), los errores de la interfaz y las trazas de la validación de firmas (inicio, cada firma, fin). Si la app se cierra al abrir la pestaña Firmar, la última línea indica en qué paso ocurrió.
 - Validación de firmas: comprobación de rangos más estricta al leer la firma del PDF (un PDF con rangos incoherentes podía provocar un cierre).
