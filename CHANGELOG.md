@@ -1,5 +1,9 @@
 # Changelog — PDF Tool
 
+## 3.11.2
+- **Registro de errores** (`logs\errores.log`, junto al programa; menú Ayuda → «Ver log de errores»): anota los fallos internos, incluidos los que cierran la aplicación sin aviso (pánicos de Rust con ubicación y pila de llamadas), los errores de la interfaz y las trazas de la validación de firmas (inicio, cada firma, fin). Si la app se cierra al abrir la pestaña Firmar, la última línea indica en qué paso ocurrió.
+- Validación de firmas: comprobación de rangos más estricta al leer la firma del PDF (un PDF con rangos incoherentes podía provocar un cierre).
+
 ## 3.11.1
 Repaso visual (sin cambios de funcionamiento):
 - Etiquetas de los formularios alineadas a la izquierda («Texto» en Marca de agua; «Nombre del perfil» y «Añadir al nombre» en Lotes); salían centradas.

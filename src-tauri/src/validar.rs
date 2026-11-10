@@ -88,7 +88,8 @@ pub fn extraer_firmas(b: &[u8]) -> Vec<Extraida> {
         let n: Vec<u64> = t[a + 1..c].split_whitespace().filter_map(|x| x.parse().ok()).collect();
         if n.len() != 4 || n[1] == 0 { continue; }
         let (b1, c1) = (n[1] as usize, n[2] as usize);
-        if c1 > b.len() || b1 >= c1 || n[2] + n[3] > b.len() as u64 { continue; }
+        let (Some(fin1), Some(fin2)) = (n[0].checked_add(n[1]), n[2].checked_add(n[3])) else { continue };
+        if c1 > b.len() || b1 >= c1 || fin2 > b.len() as u64 || fin1 > n[2] { continue; }
         let contenido = &b[b1..c1];
         if contenido.first() != Some(&b'<') || contenido.last() != Some(&b'>') { continue; }
         let mut cms = hex_a_bytes(&contenido[1..contenido.len() - 1]);
@@ -211,7 +212,7 @@ pub fn validar_pdf(bytes: &[u8], revocacion: bool) -> Vec<ResultadoValidacion> {
     let mut out = vec![];
     for (i, f) in firmas.iter().enumerate() {
         let mut r = ResultadoValidacion { indice: i as u32 + 1, integridad: "no_verificable".into(), firma: "no_comprobada".into(), cadena: "no_comprobada".into(), revocacion: "no_comprobada".into(), nivel: "ok".into(), ..Default::default() };
-        r.cubre_todo = f.rango[2] + f.rango[3] >= bytes.len() as u64 - 4;
+        r.cubre_todo = f.rango[2] + f.rango[3] >= (bytes.len() as u64).saturating_sub(4);
         let Some(c) = analizar_cms(&f.cms) else {
             r.nivel = "error".into(); r.resumen = "Firma ilegible o con un formato no reconocido.".into(); out.push(r); continue;
         };
@@ -235,7 +236,10 @@ pub fn validar_pdf(bytes: &[u8], revocacion: bool) -> Vec<ResultadoValidacion> {
         }
         // Windows: firma + cadena
         if r.integridad != "modificado" {
-            match verificar_windows(&f.cms, &f.datos, &c.certs, unix, revocacion) {
+            crate::registrar_error("TRAZA", &format!("firma {}: comprobando con Windows (cms {} B, datos {} B, {} certs)", i + 1, f.cms.len(), f.datos.len(), c.certs.len()));
+            let veredicto = verificar_windows(&f.cms, &f.datos, &c.certs, unix, revocacion);
+            crate::registrar_error("TRAZA", &format!("firma {}: Windows respondió", i + 1));
+            match veredicto {
                 Ok(v) => {
                     r.firma = if v.firma_ok { "ok".into() } else { "invalida".into() };
                     if v.firma_ok { interpretar_cadena(v.error_cadena, revocacion, &mut r); }

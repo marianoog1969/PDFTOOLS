@@ -285,6 +285,13 @@ export default function App() {
     } catch (e) { anotar("err", amigable(String(e))); }
   }
 
+  async function abrirErrores() {
+    try {
+      const contenido = await invoke<string>("leer_errores");
+      setVisorLog(contenido || "(No hay errores registrados)");
+    } catch (e) { anotar("err", amigable(String(e))); }
+  }
+
   // Solo resetea el flag de cancelación en el backend, sin tocar ETA/contadores.
   // Necesario en toda operación de un solo disparo (combinar, extraer, imágenes
   // combinadas, miniaturas, reordenar): si el usuario canceló una operación anterior,
@@ -506,6 +513,7 @@ export default function App() {
       { texto: "Manual de usuario", hacer: () => setVerManual(true) },
       { texto: "Atajos de teclado", atajo: "?", hacer: () => setVerAtajos(true) },
       { texto: "Ver log", hacer: abrirLog },
+      { texto: "Ver log de errores", hacer: abrirErrores },
       { sep: true },
       { texto: "Acerca de PDF Tool", hacer: () => setVerAcerca(true) },
     ] },

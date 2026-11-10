@@ -229,6 +229,66 @@ fn purgar_logs_antiguos() {
     }
 }
 
+// ───── Log de errores: `logs\errores.log` junto al programa ─────
+// Recoge los fallos internos (pánicos de Rust, errores de la interfaz) y las trazas de pasos delicados,
+// para poder saber qué pasaba si la aplicación se cierra sola. Se recorta solo al pasar de 1 MB.
+fn marca_utc() -> String {
+    let t = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0) as i64;
+    let (dias, resto) = (t.div_euclid(86400), t.rem_euclid(86400));
+    // Fecha civil a partir de días desde 1970 (algoritmo de H. Hinnant)
+    let z = dias + 719468;
+    let era = z.div_euclid(146097);
+    let doe = z.rem_euclid(146097);
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + if m <= 2 { 1 } else { 0 };
+    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02} UTC", y, m, d, resto / 3600, (resto % 3600) / 60, resto % 60)
+}
+
+pub(crate) fn registrar_error(origen: &str, mensaje: &str) {
+    use std::io::Write;
+    let Some(dir) = dir_logs() else { return };
+    let _ = fs::create_dir_all(&dir);
+    let ruta = dir.join("errores.log");
+    if fs::metadata(&ruta).map(|m| m.len() > 1_000_000).unwrap_or(false) {
+        let _ = fs::rename(&ruta, dir.join("errores.anterior.log"));
+    }
+    if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(&ruta) {
+        let _ = writeln!(f, "{} [{}] v{} {}", marca_utc(), origen, env!("CARGO_PKG_VERSION"), mensaje);
+    }
+}
+
+/// Instala un gancho que anota los pánicos (con su ubicación y la pila de llamadas) antes de que la
+/// aplicación se cierre: con `panic = "abort"` y sin consola, de otro modo se cerraría sin dejar rastro.
+fn instalar_gancho_panico() {
+    std::panic::set_hook(Box::new(|info| {
+        let donde = info.location().map(|l| format!("{}:{}", l.file(), l.line())).unwrap_or_default();
+        let msg = info.payload().downcast_ref::<&str>().map(|s| s.to_string())
+            .or_else(|| info.payload().downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "(sin mensaje)".into());
+        let pila = std::backtrace::Backtrace::force_capture();
+        registrar_error("PANICO", &format!("{} en {}\n{}", msg, donde, pila));
+    }));
+}
+
+/// Errores de la interfaz (excepciones no capturadas, promesas rechazadas) enviados desde JavaScript.
+#[tauri::command]
+fn registrar_error_js(origen: String, mensaje: String) {
+    registrar_error(&origen.chars().take(40).collect::<String>(), &mensaje.chars().take(4000).collect::<String>());
+}
+
+#[tauri::command]
+fn leer_errores() -> Result<String, String> {
+    let ruta = dir_logs().map(|d| d.join("errores.log")).ok_or("No se pudo determinar la ruta del log")?;
+    match fs::read_to_string(&ruta) {
+        Ok(t) => { let n = t.len(); Ok(if n > 200_000 { t[t.char_indices().map(|(i, _)| i).find(|&i| i >= n - 200_000).unwrap_or(0)..].to_string() } else { t }) }
+        Err(_) => Ok(String::new()),
+    }
+}
+
 #[tauri::command]
 fn escribir_log(linea: String, fecha: String) {
     static PURGADO: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -1414,8 +1474,11 @@ async fn estado_firmas(ruta: String) -> Result<EstadoFirmas, String> {
 #[tauri::command]
 async fn validar_firmas(ruta: String, revocacion: bool) -> Result<Vec<validar::ResultadoValidacion>, String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<Vec<validar::ResultadoValidacion>, String> {
-        let b = std::fs::read(&ruta).map_err(|e| format!("No se pudo leer el PDF: {e}"))?;
-        Ok(validar::validar_pdf(&b, revocacion))
+        registrar_error("TRAZA", &format!("validar_firmas: inicio ({}) revocacion={}", ruta, revocacion));
+        let b = std::fs::read(&ruta).map_err(|e| { let m = format!("No se pudo leer el PDF: {e}"); registrar_error("ERROR", &m); m })?;
+        let r = validar::validar_pdf(&b, revocacion);
+        registrar_error("TRAZA", &format!("validar_firmas: fin ({} firma(s))", r.len()));
+        Ok(r)
     }).await.map_err(|e| e.to_string())?
 }
 
@@ -2315,6 +2378,8 @@ async fn convertir_office(app: tauri::AppHandle, entrada: String, salida: String
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    instalar_gancho_panico();
+    registrar_error("INICIO", "aplicación iniciada");
     tauri::Builder::default()
         .manage(EstadoApp::default())
         .plugin(tauri_plugin_dialog::init())
@@ -2389,6 +2454,8 @@ pub fn run() {
             reordenar_paginas,
             dividir_pdf,
             escribir_log,
+            registrar_error_js,
+            leer_errores,
             cancelar_operacion,
             resetear_cancelacion,
             leer_log,

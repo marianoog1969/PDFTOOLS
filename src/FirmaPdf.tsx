@@ -97,7 +97,7 @@ export default function FirmaPdf({ ruta, total, minis, abiertos, deshabilitado, 
   async function validar(revocacion: boolean) {
     setValidando(true);
     try { setVals(await invoke<Validacion[]>("validar_firmas", { ruta, revocacion })); }
-    catch (e) { manejarError(e); }
+    catch (e) { invoke("registrar_error_js", { origen: "FIRMA", mensaje: `validar_firmas: ${String(e)}` }).catch(() => {}); manejarError(e); }
     setValidando(false);
   }
   // Al abrir un PDF firmado se validan las firmas sin conexión (rápido); la revocación se comprueba a petición.
