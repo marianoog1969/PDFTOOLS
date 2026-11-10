@@ -15,7 +15,7 @@ export interface InfoPdf { paginas: number; protegido: boolean; corrupto: boolea
 export interface ResultadoValidacion { ruta: string; ok: boolean; protegido: boolean; corrupto: boolean; error?: string; }
 export interface HistorialItem {
   id: string;
-  operacion: "combinar" | "comprimir" | "ocr" | "extraer" | "imagenes" | "office" | "dividir" | "organizar" | "anotar" | "firmar";
+  operacion: "combinar" | "comprimir" | "ocr" | "extraer" | "imagenes" | "office" | "dividir" | "organizar" | "anotar";
   archivos: string[];
   resultado: string;
   fecha: string;

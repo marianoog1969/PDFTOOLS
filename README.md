@@ -1,6 +1,6 @@
 # PDF Tool
 
-Tauri 2 + Rust + React/TS. Visor, organizar, anotar, firmar, combinar, comprimir, OCR, imprimir y lotes de PDF.
+Tauri 2 + Rust + React/TS. Visor, organizar, anotar, combinar, comprimir, OCR, imprimir y lotes de PDF.
 OCR implementado con Ghostscript (rasteriza) + Tesseract (reconoce texto)
 + lopdf (combina las páginas), sin Python ni ocrmypdf de por medio.
 
@@ -100,10 +100,10 @@ Pruebas de Rust (impresión y comprobación de impresoras): `cargo test --manife
 ## Estructura del código
 - `src/App.tsx`: ventana, menús, lateral, diálogos comunes y barra de estado.
 - `src/herramientas/`: Combinar, Extraer, Dividir, Comprimir, OCR, Imágenes y Office (cada una con su estado); `comun.tsx` reúne lo compartido.
-- `src/Visor.tsx` (+ `FirmaPdf`, `AnotadorPdf`, `VisorPdf`): visor en pestañas con Leer / Organizar / Anotar / Firmar.
+- `src/Visor.tsx` (+ `AnotadorPdf`, `VisorPdf`): visor en pestañas con Leer / Organizar / Anotar.
 - `src/MarcaPdf`, `FormularioPdf`, `MetadatosPdf`, `LotesPdf`, `ImprimirDialogo`: resto de herramientas.
 - `src/estilos.css`: hoja de estilos única. `src/util.ts`: utilidades puras (probadas en `src/__tests__`).
-- `src-tauri/src/`: comandos Rust (`lib.rs`), firma (`firma.rs`, `validar.rs`, `ltv.rs`), edición (`edicion.rs`, `organizar.rs`, `anotaciones.rs`), imágenes (`imagen_pdf.rs`) impresión (`imprimir.rs`) y comprobación de si una impresora acepta PDF por IPP/SNMP (`sondeo.rs`).
+- `src-tauri/src/`: comandos Rust (`lib.rs`), edición (`edicion.rs`, `organizar.rs`, `anotaciones.rs`), imágenes (`imagen_pdf.rs`) impresión (`imprimir.rs`) y comprobación de si una impresora acepta PDF por IPP/SNMP (`sondeo.rs`).
 
 ## Calidad del OCR
 

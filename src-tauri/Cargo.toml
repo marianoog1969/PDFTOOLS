@@ -1,6 +1,6 @@
 [package]
 name = "pdftool"
-version = "3.11.3"
+version = "3.12.0"
 description = "Combinar, comprimir y OCR de PDFs"
 edition = "2021"
 

@@ -1,5 +1,13 @@
 # Changelog — PDF Tool
 
+## 3.12.0
+- **Se elimina toda la firma digital** (firmar con certificado/DNIe, validar firmas, sello de tiempo y LTV): la validación cerraba la aplicación por un fallo dentro de CRYPT32.dll de Windows.
+  - Fuera la pestaña «Firmar» del visor y su acceso en la portada, el menú Herramientas y Ctrl+K.
+  - Lotes: ya no existe el paso «Firmar»; los perfiles guardados lo pierden solos y los de ejemplo pasan a «Comprimir» y «Word/Excel/PowerPoint a PDF».
+  - Rust: eliminados `firma.rs`, `validar.rs` y `ltv.rs` y sus comandos.
+  - Manual y documentación actualizados (el manual pasa a tener una sección menos).
+- Se mantiene el registro de errores (`logs\errores.log`, Ayuda → «Ver log de errores»).
+
 ## 3.11.3
 - Diagnóstico del cierre al validar firmas (fallo dentro de CRYPT32.dll, 0xc0000005): `errores.log` anota ahora cada llamada a Windows de la validación (verificar firma, almacén temporal, cadena de certificados, liberación) para localizar cuál lo provoca. Sin cambios de funcionamiento.
 

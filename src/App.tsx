@@ -38,7 +38,7 @@ const ZONAS_TRABAJO: ZonaTrabajo[] = ["combinar", "extraer", "dividir", "comprim
 function horaActual(): string { return new Date().toLocaleTimeString("es-ES", { hour12: false }); }
 
 const HERRAMIENTAS: { id: Zona; etiqueta: string; desc: string; grupo: string; icono: ReactNode }[] = [
-  { id: "visor", etiqueta: "Visor y organizar", desc: "Lee, organiza, anota y firma PDF en pestañas", grupo: "Documento", icono: <SvgReordenar /> },
+  { id: "visor", etiqueta: "Visor y organizar", desc: "Lee, organiza y anota PDF en pestañas", grupo: "Documento", icono: <SvgReordenar /> },
   { id: "combinar", etiqueta: "Combinar", desc: "Une varios PDF en uno", grupo: "Organizar páginas", icono: <SvgCombinar /> },
   { id: "extraer", etiqueta: "Extraer páginas", desc: "Saca un rango como PDF nuevo", grupo: "Organizar páginas", icono: <SvgExtraer /> },
   { id: "dividir", etiqueta: "Dividir", desc: "Parte un PDF en varios", grupo: "Organizar páginas", icono: <SvgDividir /> },
@@ -503,7 +503,6 @@ export default function App() {
       { texto: tema === "oscuro" ? "Tema claro" : "Tema oscuro", hacer: () => setTema(tema === "oscuro" ? "claro" : "oscuro") },
     ] },
     { titulo: "Herramientas", items: [
-      { texto: "Firmar PDF", hacer: () => enVisor("modo:firmar") },
       { texto: "Anotar", hacer: () => enVisor("modo:anotar") },
       { texto: "Organizar páginas", hacer: () => enVisor("modo:organizar") },
       { sep: true },
@@ -949,7 +948,6 @@ export default function App() {
           ...HERRAMIENTAS.map((h): ItemPaleta => ({ id: "h-" + h.id, titulo: h.etiqueta, grupo: "Herramienta", accion: () => setHerramienta(h.id) })),
           { id: "abrir", titulo: "Abrir PDF en el visor…", grupo: "Acción", accion: abrirPdfsVisor },
           { id: "imprimir", titulo: estadoVisor ? `Imprimir «${estadoVisor.nombre}»` : "Imprimir un PDF…", grupo: "Acción", accion: () => { if (estadoVisor) pedirImpresion(estadoVisor.ruta, estadoVisor.cambios); else pedirImpresion(); } },
-          { id: "m-firmar", titulo: "Firmar PDF (certificado / DNIe) y validar firmas", grupo: "Visor", accion: () => enVisor("modo:firmar") },
           { id: "m-anotar", titulo: "Anotar, resaltar o tachar", grupo: "Visor", accion: () => enVisor("modo:anotar") },
           { id: "m-organizar", titulo: "Organizar páginas (girar, mover, eliminar)", grupo: "Visor", accion: () => enVisor("modo:organizar") },
           { id: "tema", titulo: tema === "oscuro" ? "Cambiar a tema claro" : "Cambiar a tema oscuro", grupo: "Acción", accion: () => setTema(tema === "oscuro" ? "claro" : "oscuro") },

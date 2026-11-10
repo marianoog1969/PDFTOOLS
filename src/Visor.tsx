@@ -2,14 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VisorPdf from "./VisorPdf";
 import AnotadorPdf, { type Anot } from "./AnotadorPdf";
-import FirmaPdf from "./FirmaPdf";
 import { I } from "./Icono";
 import { aRango } from "./util";
 import { avisar, confirmar } from "./Avisos";
 
 interface InfoPdf { paginas: number; protegido: boolean; corrupto: boolean; error?: string; tamano_bytes: number; }
 interface PagOrg { id: number; origen: number | null; rot: number; fuente?: string; mini?: string; }
-type Modo = "leer" | "organizar" | "anotar" | "firmar";
+type Modo = "leer" | "organizar" | "anotar";
 
 interface Doc {
   ruta: string;
@@ -41,7 +40,7 @@ interface Props {
   nombreArchivo: (ruta: string) => string;
   log: (tipo: "info" | "ok" | "err", texto: string) => void;
   manejarError: (e: unknown) => void;
-  historial: (operacion: "organizar" | "anotar" | "firmar", archivo: string, resultado: string) => void;
+  historial: (operacion: "organizar" | "anotar", archivo: string, resultado: string) => void;
   recientes: string[];
   alGenerar: (ruta: string) => void;         // un resultado nuevo (alimenta la tarjeta «Último resultado»)
   alAbrir: (ruta: string) => void;           // se llama al abrir una pestaña (para «recientes»)
@@ -449,7 +448,7 @@ export default function Visor(P: Props) {
     return nums.length ? aRango(nums) : undefined;
   }
 
-  // Ir a un modo (Firmar, Anotar…). Sin documento abierto, pide el PDF y entra en ese modo al abrirlo.
+  // Ir a un modo (Anotar, Organizar…). Sin documento abierto, pide el PDF y entra en ese modo al abrirlo.
   function irAModo(m: Modo) {
     if (doc) { upd(doc.ruta, (d) => ({ ...d, modo: m })); return; }
     modoPendiente.current = m; P.abrirDialogo();
@@ -470,7 +469,6 @@ export default function Visor(P: Props) {
             <p className="inicio-sub">¿Qué quieres hacer con tus PDF?</p>
             <div className="inicio-acciones">
               <button className="primario azul inicio-abrir" onClick={P.abrirDialogo} disabled={bloqueado}><I n="file" s={17} /> Abrir PDF…</button>
-              <button className="secundario inicio-rapida" onClick={() => irAModo("firmar")} disabled={bloqueado}><I n="lock" s={15} /> Firmar</button>
               <button className="secundario inicio-rapida" onClick={() => irAModo("anotar")} disabled={bloqueado}><I n="highlight" s={15} /> Anotar</button>
               <button className="secundario inicio-rapida" onClick={() => irAModo("organizar")} disabled={bloqueado}><I n="pages2" s={15} /> Organizar páginas</button>
             </div>
@@ -515,9 +513,9 @@ export default function Visor(P: Props) {
 
       <div className="ws-modos">
         <button className="ws-alternar-minis" onClick={alternarMinis} title="Mostrar u ocultar las miniaturas de página" aria-label="Mostrar u ocultar miniaturas"><I n="panel" s={16} /></button>
-        {(["leer", "organizar", "anotar", "firmar"] as Modo[]).map((m) => (
+        {(["leer", "organizar", "anotar"] as Modo[]).map((m) => (
           <button key={m} className={doc.modo === m ? "on" : ""} onClick={() => upd(doc.ruta, (d) => ({ ...d, modo: m }))}>
-            {m === "leer" ? "Leer" : m === "organizar" ? "Organizar páginas" : m === "anotar" ? "Anotar" : "Firmar"}
+            {m === "leer" ? "Leer" : m === "organizar" ? "Organizar páginas" : "Anotar"}
           </button>
         ))}
         <span className="visor-espacio" />
@@ -572,22 +570,6 @@ export default function Visor(P: Props) {
             </button>
           </div>
         </>
-      ))}
-
-      {doc.modo === "firmar" && (cambios ? (
-        <div className="ws-bloqueo">
-          <p>Hay cambios de páginas sin aplicar. Aplícalos primero: la firma se hace sobre el PDF ya guardado.</p>
-          <button className="primario azul" onClick={aplicarOrg} disabled={bloqueado}>Aplicar cambios de páginas</button>
-        </div>
-      ) : doc.anot.length > 0 ? (
-        <div className="ws-bloqueo">
-          <p>Hay anotaciones sin guardar. Guárdalas primero: una vez firmado, el documento no debe modificarse.</p>
-          <button className="primario azul" onClick={guardarAnot} disabled={bloqueado}>Guardar copia anotada</button>
-        </div>
-      ) : (
-        <FirmaPdf ruta={doc.ruta} total={doc.total} minis={doc.minis} abiertos={docs.map((d) => d.ruta)} deshabilitado={bloqueado}
-          nombreArchivo={P.nombreArchivo} log={P.log} manejarError={P.manejarError}
-          historial={(a, r) => P.historial("firmar", a, r)} alTerminar={(r) => { const ok = r.find((x) => x.ok); if (ok) P.alGenerar(ok.salida); }} abrirVisor={(r) => { abrir(r); }} />
       ))}
 
       {doc.modo === "organizar" && (

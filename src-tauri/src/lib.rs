@@ -14,9 +14,6 @@ mod bloqueo;
 
 mod imagen_pdf;
 mod anotaciones;
-mod firma;
-mod validar;
-mod ltv;
 mod edicion;
 mod organizar;
 mod imprimir;
@@ -1345,143 +1342,6 @@ async fn buscar_texto(entrada: String, consulta: String) -> Result<ResultadoBusq
     }).await.map_err(|e| e.to_string())?
 }
 
-// ───────────────────────────── Firma digital ─────────────────────────────
-
-#[derive(serde::Serialize)]
-struct ResultadoFirma { entrada: String, salida: String, ok: bool, error: String, aviso: String }
-
-fn salida_firmada(entrada: &str, carpeta: Option<&str>) -> PathBuf {
-    let p = PathBuf::from(entrada);
-    let stem = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "documento".into());
-    let dir = match carpeta { Some(c) if !c.trim().is_empty() => PathBuf::from(c), _ => p.parent().map(|d| d.to_path_buf()).unwrap_or_default() };
-    let mut cand = dir.join(format!("{stem}_firmado.pdf"));
-    let mut n = 2;
-    while cand.exists() { cand = dir.join(format!("{stem}_firmado ({n}).pdf")); n += 1; }
-    cand
-}
-
-#[cfg(windows)]
-fn abrir_almacen(origen: &str, pfx_ruta: &Option<String>, pfx_clave: &Option<String>) -> Result<firma::capi::Almacen, String> {
-    if origen == "pfx" {
-        let r = pfx_ruta.as_deref().ok_or("Elige el archivo .pfx / .p12")?;
-        let datos = std::fs::read(r).map_err(|e| format!("No se pudo leer el certificado: {e}"))?;
-        firma::capi::Almacen::pfx(&datos, pfx_clave.as_deref().unwrap_or(""))
-    } else {
-        firma::capi::Almacen::personal()
-    }
-}
-
-/// Tras firmar: sello de tiempo y/o datos de validación si se pidió (necesita conexión). Devuelve un aviso si falla.
-fn aviso_ltv(ruta: &str, op: &firma::Opciones) -> String {
-    let nivel = op.nivel.as_deref().unwrap_or("basica");
-    if !op.criptografica || (nivel != "tiempo" && nivel != "ltv") { return String::new(); }
-    let tsa = op.tsa_url.clone().filter(|t| !t.trim().is_empty()).unwrap_or_else(|| ltv::TSA_POR_DEFECTO.to_string());
-    match ltv::completar_pdf(ruta, ruta, nivel, &tsa, ltv::http_sistema().as_ref()) {
-        Ok(inf) => if inf.avisos.is_empty() { String::new() } else { inf.avisos.join(" · ") },
-        Err(e) => format!("Firmado, pero no se pudo completar el sello/validación a largo plazo: {e}"),
-    }
-}
-
-/// Añade sello de tiempo y/o datos de validación a PDF ya firmados (necesita conexión). Crea «_ltv».
-#[tauri::command]
-async fn completar_firma(rutas: Vec<String>, nivel: String, tsa_url: Option<String>) -> Result<Vec<ResultadoFirma>, String> {
-    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<ResultadoFirma>, String> {
-        let tsa = tsa_url.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| ltv::TSA_POR_DEFECTO.to_string());
-        let http = ltv::http_sistema();
-        let mut v = vec![];
-        for e in &rutas {
-            let p = PathBuf::from(e);
-            let stem = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-            let mut cand = p.with_file_name(format!("{stem}_ltv.pdf")); let mut n = 2;
-            while cand.exists() { cand = p.with_file_name(format!("{stem}_ltv ({n}).pdf")); n += 1; }
-            let s = cand.to_string_lossy().into_owned();
-            v.push(match ltv::completar_pdf(e, &s, &nivel, &tsa, http.as_ref()) {
-                Ok(inf) => ResultadoFirma { entrada: e.clone(), salida: s, ok: true, error: String::new(), aviso: inf.avisos.join(" · ") },
-                Err(err) => { let _ = std::fs::remove_file(&s); ResultadoFirma { entrada: e.clone(), salida: String::new(), ok: false, error: err, aviso: String::new() } }
-            });
-        }
-        Ok(v)
-    }).await.map_err(|e| e.to_string())?
-}
-
-/// Certificados con clave privada del almacén de Windows (DNIe, FNMT…) o de un .pfx.
-#[tauri::command]
-async fn listar_certificados(origen: String, pfx_ruta: Option<String>, pfx_clave: Option<String>) -> Result<Vec<firma::CertInfo>, String> {
-    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<firma::CertInfo>, String> {
-        #[cfg(windows)]
-        { Ok(abrir_almacen(&origen, &pfx_ruta, &pfx_clave)?.listar()) }
-        #[cfg(not(windows))]
-        { let _ = (origen, pfx_ruta, pfx_clave); Err("La firma con certificado solo está disponible en Windows.".into()) }
-    }).await.map_err(|e| e.to_string())?
-}
-
-/// Firma (y/o sella) varios PDF con el mismo certificado y la misma posición.
-#[tauri::command]
-async fn firmar_pdfs(app: tauri::AppHandle, entradas: Vec<String>, carpeta_salida: Option<String>, opciones: firma::Opciones) -> Result<Vec<ResultadoFirma>, String> {
-    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<ResultadoFirma>, String> {
-        #[cfg(windows)]
-        {
-            let alm = abrir_almacen(&opciones.cert_origen, &opciones.pfx_ruta, &opciones.pfx_clave)?;
-            let cert = alm.firmante(&opciones.cert_id)?;
-            if cert.info.caducado { return Err(format!("El certificado de {} caducó el {}.", cert.info.nombre, cert.info.caduca)); }
-            let mut v = vec![];
-            let total = entradas.len();
-            for (i, e) in entradas.iter().enumerate() {
-                let _ = app.emit("firma-progreso", serde_json::json!({ "actual": i, "total": total }));
-                let s = salida_firmada(e, carpeta_salida.as_deref());
-                let r = firma::firmar_pdf(e, &s.to_string_lossy(), &opciones, &cert.info, if opciones.criptografica { Some(&cert) } else { None });
-                v.push(match r {
-                    Ok(()) => ResultadoFirma { entrada: e.clone(), salida: s.to_string_lossy().into_owned(), ok: true, error: String::new(), aviso: aviso_ltv(&s.to_string_lossy(), &opciones) },
-                    Err(err) => { let _ = std::fs::remove_file(&s); ResultadoFirma { entrada: e.clone(), salida: String::new(), ok: false, error: err, aviso: String::new() } }
-                });
-            }
-            let _ = app.emit("firma-progreso", serde_json::json!({ "actual": total, "total": total }));
-            Ok(v)
-        }
-        #[cfg(not(windows))]
-        { let _ = (app, entradas, carpeta_salida, opciones); Err("La firma con certificado solo está disponible en Windows.".into()) }
-    }).await.map_err(|e| e.to_string())?
-}
-
-
-/// Firmas detectadas en un PDF (no valida certificados: solo informa de cuántas hay y si hay cambios posteriores).
-#[derive(serde::Serialize)]
-struct EstadoFirmas { firmas: u32, cubre_todo: bool, ltv: bool }
-
-#[tauri::command]
-async fn estado_firmas(ruta: String) -> Result<EstadoFirmas, String> {
-    tauri::async_runtime::spawn_blocking(move || -> Result<EstadoFirmas, String> {
-        let b = std::fs::read(&ruta).map_err(|e| e.to_string())?;
-        let clave = b"/ByteRange";
-        let (mut n, mut cubre) = (0u32, false);
-        let mut i = 0usize;
-        while let Some(p) = b[i..].windows(clave.len()).position(|w| w == clave) {
-            let ini = i + p + clave.len();
-            let fin = (ini + 120).min(b.len());
-            let t = String::from_utf8_lossy(&b[ini..fin]).into_owned();
-            if let (Some(a), Some(c)) = (t.find('['), t.find(']')) {
-                let v: Vec<u64> = t[a + 1..c].split_whitespace().filter_map(|x| x.parse().ok()).collect();
-                if v.len() == 4 && v[1] > 0 { n += 1; cubre = v[2] + v[3] >= b.len() as u64 - 4; }
-            }
-            i = ini;
-        }
-        let ltv = b.windows(4).any(|w| w == b"/DSS");
-        Ok(EstadoFirmas { firmas: n, cubre_todo: cubre, ltv })
-    }).await.map_err(|e| e.to_string())?
-}
-
-/// Valida las firmas de un PDF (integridad, firmante, cadena de confianza y, si se pide, revocación).
-#[tauri::command]
-async fn validar_firmas(ruta: String, revocacion: bool) -> Result<Vec<validar::ResultadoValidacion>, String> {
-    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<validar::ResultadoValidacion>, String> {
-        registrar_error("TRAZA", &format!("validar_firmas: inicio ({}) revocacion={}", ruta, revocacion));
-        let b = std::fs::read(&ruta).map_err(|e| { let m = format!("No se pudo leer el PDF: {e}"); registrar_error("ERROR", &m); m })?;
-        let r = validar::validar_pdf(&b, revocacion);
-        registrar_error("TRAZA", &format!("validar_firmas: fin ({} firma(s))", r.len()));
-        Ok(r)
-    }).await.map_err(|e| e.to_string())?
-}
-
 /// Renderiza una página con Ghostscript (PNG) para el tachado real.
 fn render_gs_png(entrada: &str, pagina: u32, dpi: u32) -> Result<Vec<u8>, String> {
     let ruta_gs = ruta_util("gs/bin/gswin64c.exe")?;
@@ -1933,8 +1793,7 @@ enum Paso {
     Decorar { decorado: edicion::Decorado },
     Metadatos { opciones: edicion::LimpiarMeta },
     Aplanar,
-    Firmar { opciones: firma::Opciones },
-    /// Imprime el PDF tal como está en ese punto de la cadena (no lo modifica). Puede ir después de la firma.
+    /// Imprime el PDF tal como está en ese punto de la cadena (no lo modifica).
     Imprimir { ajustes: imprimir::Ajustes },
 }
 
@@ -2197,31 +2056,6 @@ async fn dialogo_impresion(app: tauri::AppHandle, ruta: String) -> Result<(), St
     }
 }
 
-/// Firma (en un único hilo, abriendo el certificado una vez) los PDF intermedios de un lote.
-/// Si no se puede abrir el certificado, todos quedan con ese error.
-fn firmar_pendientes_lote(opciones: &firma::Opciones, pend: &[(usize, PathBuf, PathBuf, PathBuf)]) -> Vec<Result<PathBuf, String>> {
-    #[cfg(windows)]
-    {
-        let preparar = || -> Result<firma::capi::Almacen, String> { abrir_almacen(&opciones.cert_origen, &opciones.pfx_ruta, &opciones.pfx_clave) };
-        let alm = match preparar() { Ok(a) => a, Err(e) => return pend.iter().map(|_| Err(e.clone())).collect() };
-        let cert = match alm.firmante(&opciones.cert_id) {
-            Ok(c) if c.info.caducado => { let e = format!("El certificado de {} caducó el {}.", c.info.nombre, c.info.caduca); return pend.iter().map(|_| Err(e.clone())).collect(); }
-            Ok(c) => c,
-            Err(e) => return pend.iter().map(|_| Err(e.clone())).collect(),
-        };
-        pend.iter().map(|(_, intermedio, dir, dest)| {
-            let firmado = dir.join("firmado.pdf");
-            let (a, b) = (intermedio.to_string_lossy().into_owned(), firmado.to_string_lossy().into_owned());
-            firma::firmar_pdf(&a, &b, opciones, &cert.info, if opciones.criptografica { Some(&cert) } else { None })?;
-            mover_archivo(&firmado, dest)?;
-            Ok(dest.clone())
-        }).collect()
-    }
-    #[cfg(not(windows))]
-    { let _ = opciones; pend.iter().map(|_| Err("La firma con certificado solo está disponible en Windows.".to_string())).collect() }
-}
-
-/// La firma, si existe, debe ser el último paso (cualquier cambio posterior la invalidaría).
 #[tauri::command]
 async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Option<String>, carpeta_salida: String, sufijo: String, pasos: Vec<Paso>) -> Result<Vec<ResultadoLote>, String> {
     if pasos.is_empty() { return Err("El perfil no tiene ningún paso.".into()); }
@@ -2230,13 +2064,6 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
     }
     let con_conversion = matches!(pasos.first(), Some(Paso::Convertir { .. }));
     if carpeta_salida.trim().is_empty() { return Err("Elige la carpeta de salida.".into()); }
-    if let Some(i) = pasos.iter().position(|p| matches!(p, Paso::Firmar { .. })) {
-        if pasos[i + 1..].iter().any(|p| !matches!(p, Paso::Imprimir { .. })) {
-            return Err("La firma debe ser el último paso que modifica el PDF (después solo puede ir «Imprimir»).".into());
-        }
-    }
-    #[cfg(not(windows))]
-    if pasos.iter().any(|p| matches!(p, Paso::Firmar { .. })) { return Err("La firma con certificado solo está disponible en Windows.".into()); }
     {
         let st = app.state::<EstadoApp>();
         st.cancelar.store(false, Ordering::SeqCst);
@@ -2244,14 +2071,6 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
     fs::create_dir_all(&carpeta_salida).map_err(|e| format!("No se pudo crear la carpeta de salida: {e}"))?;
     let total = entradas.len();
     let mut res: Vec<ResultadoLote> = vec![];
-    // Archivos que esperan la firma (último paso): (posición en `res`, PDF intermedio, carpeta temporal, destino).
-    // La firma se hace al final, en un hilo propio y con el certificado abierto una sola vez: sus punteros de
-    // CryptoAPI no pueden cruzar los `await` de los demás pasos.
-    let firma_final = pasos.iter().find_map(|p| match p { Paso::Firmar { opciones } => Some(opciones.clone()), _ => None });
-    // impresiones que van después de la firma (se hacen sobre el PDF ya firmado)
-    let imprimir_tras_firma: Vec<imprimir::Ajustes> = pasos.iter().skip_while(|p| !matches!(p, Paso::Firmar { .. }))
-        .filter_map(|p| match p { Paso::Imprimir { ajustes } => Some(ajustes.clone()), _ => None }).collect();
-    let mut pend_firma: Vec<(usize, PathBuf, PathBuf, PathBuf)> = vec![];
     for (i, ent) in entradas.iter().enumerate() {
         let _ = app.emit("lote-progreso", serde_json::json!({ "actual": i, "total": total, "archivo": ent }));
         if esta_cancelado(&app.state::<EstadoApp>()) { res.push(ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: "Cancelado".into(), tamano_entrada: 0, tamano_salida: 0, aviso: String::new() }); continue; }
@@ -2267,7 +2086,6 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
                 return Err("Formato no admitido: solo PDF y documentos de Office.".into());
             }
             for (k, paso) in pasos.iter().enumerate() {
-                if matches!(paso, Paso::Firmar { .. }) { break; } // se firma después, todos juntos
                 let sig = dir.join(format!("paso{}.pdf", k));
                 let (a, b) = (actual.to_string_lossy().into_owned(), sig.to_string_lossy().into_owned());
                 if let Paso::Convertir { opciones } = paso {
@@ -2307,50 +2125,20 @@ async fn ejecutar_lote(app: tauri::AppHandle, entradas: Vec<String>, base: Optio
                             Err(e) => return Err(e),
                         }
                     }
-                    Paso::Firmar { .. } | Paso::Imprimir { .. } | Paso::Convertir { .. } => unreachable!(),
+                    Paso::Imprimir { .. } | Paso::Convertir { .. } => unreachable!(),
                 }
                 actual = sig;
             }
             let dest = destino_lote(ent, &base, &carpeta_salida, &sufijo);
             if let Some(p) = dest.parent() { fs::create_dir_all(p).map_err(|e| e.to_string())?; }
-            if firma_final.is_some() { return Ok(actual); } // queda pendiente de firmar
             mover_archivo(&actual, &dest)?;
             Ok(dest)
         }.await;
-        if firma_final.is_some() {
-            if let Ok(intermedio) = &r {
-                pend_firma.push((res.len(), intermedio.clone(), dir.clone(), destino_lote(ent, &base, &carpeta_salida, &sufijo)));
-                res.push(ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: "Pendiente de firma".into(), tamano_entrada: tam_in, tamano_salida: 0, aviso: avisos.join(" · ") });
-                continue;
-            }
-        }
         limpiar_dir_temp(&dir);
         res.push(match r {
             Ok(d) => ResultadoLote { entrada: ent.clone(), tamano_salida: fs::metadata(&d).map(|m| m.len()).unwrap_or(0), salida: d.to_string_lossy().into_owned(), ok: true, error: String::new(), tamano_entrada: tam_in, aviso: avisos.join(" · ") },
             Err(e) => ResultadoLote { entrada: ent.clone(), salida: String::new(), ok: false, error: e, tamano_entrada: tam_in, tamano_salida: 0, aviso: avisos.join(" · ") },
         });
-    }
-    if let (Some(opciones), false) = (firma_final, pend_firma.is_empty()) {
-        let _ = app.emit("lote-progreso", serde_json::json!({ "actual": total, "total": total, "archivo": "Firmando…" }));
-        let pend = pend_firma.clone();
-        let firmados = tauri::async_runtime::spawn_blocking(move || firmar_pendientes_lote(&opciones, &pend))
-            .await.map_err(|e| e.to_string())?;
-        for ((pos, _, dir, _), r) in pend_firma.iter().zip(firmados) {
-            limpiar_dir_temp(dir);
-            let it = &mut res[*pos];
-            match r {
-                Ok(d) => {
-                    it.tamano_salida = fs::metadata(&d).map(|m| m.len()).unwrap_or(0); it.salida = d.to_string_lossy().into_owned(); it.ok = true; it.error.clear();
-                    for aj in &imprimir_tras_firma {
-                        match imprimir_archivo(&app, &it.salida, aj).await {
-                            Ok(_) => { if !it.aviso.is_empty() { it.aviso.push_str(" · "); } it.aviso.push_str("Impreso"); }
-                            Err(e) => { if !it.aviso.is_empty() { it.aviso.push_str(" · "); } it.aviso.push_str(&format!("No se pudo imprimir: {}", e.replace('\n', " · "))); }
-                        }
-                    }
-                }
-                Err(e) => { it.error = e; }
-            }
-        }
     }
     let _ = app.emit("lote-progreso", serde_json::json!({ "actual": total, "total": total, "archivo": "" }));
     Ok(res)
@@ -2440,11 +2228,6 @@ pub fn run() {
             generar_miniaturas_paginas,
             renderizar_pagina,
             guardar_anotaciones,
-            listar_certificados,
-            firmar_pdfs,
-            estado_firmas,
-            validar_firmas,
-            completar_firma,
             aplicar_organizacion,
             preparar_mixto,
             limpiar_carpeta_cola,

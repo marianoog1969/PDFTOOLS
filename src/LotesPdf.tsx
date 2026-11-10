@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { I } from "./Icono";
-import { opcionesFirmaGuardadas } from "./FirmaPdf";
 import { impresoraGuardada, metodoGuardado } from "./ImprimirDialogo";
 import { PropsHerramienta, carpetaDe, esOffice, esPdf, formatoTam, guardarLS, nombreArchivo, tipoOffice, unir } from "./util";
 
@@ -15,7 +14,6 @@ type PasoUI =
   | { tipo: "decorar"; marca: string; numOn: boolean; formato: string; posicion: string }
   | { tipo: "metadatos"; completo: boolean }
   | { tipo: "aplanar" }
-  | { tipo: "firmar" }
   | { tipo: "imprimir"; impresora: string; copias: number; doble_cara: string; color: string; marca: string };
 interface Perfil { id: string; nombre: string; pasos: PasoUI[]; }
 interface ResultadoLote { entrada: string; salida: string; ok: boolean; error: string; tamano_entrada: number; tamano_salida: number; aviso: string; }
@@ -28,10 +26,10 @@ const CLAVE = "pdftool_perfiles";
 const PRESETS: Perfil[] = [
   { id: "p1", nombre: "Enviar al exterior (limpiar y comprimir)", pasos: [{ tipo: "metadatos", completo: true }, { tipo: "comprimir", nivel: "ebook" }] },
   { id: "p2", nombre: "Archivo: OCR y numeración", pasos: [{ tipo: "ocr" }, { tipo: "decorar", marca: "", numOn: true, formato: "Página {n} de {total}", posicion: "pie-derecha" }] },
-  { id: "p3", nombre: "Comprimir y firmar", pasos: [{ tipo: "comprimir", nivel: "ebook" }, { tipo: "firmar" }] },
-  { id: "p4", nombre: "Word/Excel/PowerPoint a PDF y firmar", pasos: [{ ...CONVERTIR, solo_office: true }, { tipo: "firmar" }] },
+  { id: "p3", nombre: "Comprimir", pasos: [{ tipo: "comprimir", nivel: "ebook" }] },
+  { id: "p4", nombre: "Word/Excel/PowerPoint a PDF", pasos: [{ ...CONVERTIR, solo_office: true }] },
 ];
-const NOMBRE_PASO: Record<PasoUI["tipo"], string> = { convertir: "Convertir Word/Excel/PowerPoint a PDF", comprimir: "Comprimir", ocr: "OCR (texto buscable)", decorar: "Marca de agua / numeración", metadatos: "Limpiar metadatos", aplanar: "Aplanar formularios", firmar: "Firmar con certificado", imprimir: "Imprimir" };
+const NOMBRE_PASO: Record<PasoUI["tipo"], string> = { convertir: "Convertir Word/Excel/PowerPoint a PDF", comprimir: "Comprimir", ocr: "OCR (texto buscable)", decorar: "Marca de agua / numeración", metadatos: "Limpiar metadatos", aplanar: "Aplanar formularios", imprimir: "Imprimir" };
 
 function leerPerfiles(): Perfil[] {
   try {
@@ -42,13 +40,14 @@ function leerPerfiles(): Perfil[] {
         localStorage.setItem(CLAVE + "_v", "2");
         if (!v.some((p: Perfil) => p.id === "p4")) v.push(PRESETS[3]);
       }
-      return v;
+      // 3.12: la firma digital se eliminó; se quitan esos pasos de los perfiles guardados
+      return v.map((p: Perfil) => ({ ...p, pasos: (p.pasos as { tipo: string }[]).filter((x) => x.tipo !== "firmar") as PasoUI[] }));
     }
   } catch { /* */ }
   return PRESETS;
 }
 
-function aBackend(p: PasoUI, clave: string): Record<string, unknown> {
+function aBackend(p: PasoUI): Record<string, unknown> {
   switch (p.tipo) {
     case "convertir": return { tipo: "convertir", opciones: { pdfa: p.pdfa, marcadores: true, excel_alcance: p.excel_alcance, excel_ajustar: p.excel_ajustar, ppt_salida: p.ppt_salida, tiempo_max: 120 } };
     case "comprimir": return { tipo: "comprimir", nivel: p.nivel };
@@ -58,7 +57,6 @@ function aBackend(p: PasoUI, clave: string): Record<string, unknown> {
     case "decorar": return { tipo: "decorar", decorado: {
       marca: p.marca.trim() ? { texto: p.marca, tam: 64, opacidad: 0.25, color: [0.8, 0, 0], angulo: 45 } : null,
       numeracion: p.numOn ? { formato: p.formato, posicion: p.posicion, tam: 10, inicio: 1, color: [0, 0, 0] } : null, paginas: "todas" } };
-    case "firmar": return { tipo: "firmar", opciones: opcionesFirmaGuardadas(clave) };
     case "imprimir": return { tipo: "imprimir", ajustes: {
       impresora: p.impresora || null, copias: p.copias, paginas: "", doble_cara: p.doble_cara, color: p.color, por_hoja: 1, orientacion: "auto",
       intercalar: true, metodo: p.impresora ? metodoGuardado(p.impresora) : "auto", marca_copia: p.marca.trim() || null, pie_copia: null } };
@@ -73,7 +71,6 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
   const [recursivo, setRecursivo] = useState(false);
   const [salida, setSalida] = useState("");
   const [sufijo, setSufijo] = useState("");
-  const [clave, setClave] = useState("");
   const [corriendo, setCorriendo] = useState(false);
   const [prog, setProg] = useState<{ actual: number; total: number; archivo: string; fase?: string } | null>(null);
   const [res, setRes] = useState<ResultadoLote[] | null>(null);
@@ -130,23 +127,12 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
     if (t === "convertir") return p.pasos.some((x) => x.tipo === "convertir") ? p : { ...p, pasos: [{ ...CONVERTIR }, ...p.pasos] };
     const n: PasoUI = t === "comprimir" ? { tipo: t, nivel: "ebook" } : t === "decorar" ? { tipo: t, marca: "", numOn: true, formato: "Página {n} de {total}", posicion: "pie-derecha" } : t === "metadatos" ? { tipo: t, completo: true }
       : t === "imprimir" ? { tipo: t, impresora: impresoraGuardada(), copias: 1, doble_cara: "auto", color: "auto", marca: "" } : ({ tipo: t } as PasoUI);
-    const pasos = [...p.pasos];
-    const ifirma = pasos.findIndex((x) => x.tipo === "firmar");
-    // «Imprimir» va al final (también después de la firma); el resto, antes de la firma.
-    if (t === "firmar") { if (ifirma < 0) { const iimp = pasos.findIndex((x) => x.tipo === "imprimir"); if (iimp >= 0) pasos.splice(iimp, 0, n); else pasos.push(n); } }
-    else if (t === "imprimir" || ifirma < 0) pasos.push(n); else pasos.splice(ifirma, 0, n);
+    const pasos = [...p.pasos, n]; // «Imprimir» y el resto, al final
     return { ...p, pasos };
   });
 
-  const iFirma = perfil.pasos.findIndex((p) => p.tipo === "firmar");
-  const firmaMal = iFirma >= 0 && perfil.pasos.slice(iFirma + 1).some((p) => p.tipo !== "imprimir");
-  const conFirma = perfil.pasos.some((p) => p.tipo === "firmar");
-  // «perfil.pasos» va a propósito: al cambiar los pasos se vuelve a leer la configuración de firma guardada.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const firmaCfg = useMemo(() => (conFirma ? opcionesFirmaGuardadas("") : null), [conFirma, perfil.pasos]);
-  const necesitaClave = conFirma && firmaCfg?.cert_origen === "pfx";
   const sinOffice = conConvertir && infoOffice !== null && !infoOffice.instalado;
-  const puede = !corriendo && entradas.length > 0 && perfil.pasos.length > 0 && !sinOffice && !!salida && !firmaMal && (!conFirma || !!firmaCfg) && (!necesitaClave || !!clave);
+  const puede = !corriendo && entradas.length > 0 && perfil.pasos.length > 0 && !sinOffice && !!salida;
 
   async function elegirCarpeta() { const r = await open({ directory: true, multiple: false }); if (r && !Array.isArray(r)) { salidaManual.current = false; setCarpetaOrigen(r); setRes(null); } }
   async function elegirArchivos() { const r = await open({ multiple: true, filters: [{ name: "PDF y documentos de Office", extensions: ["pdf", ...EXT_OFFICE] }, { name: "PDF", extensions: ["pdf"] }] }); if (!r) return; salidaManual.current = false; setCarpetaOrigen(null); setArchivos((p) => [...new Set([...p, ...(Array.isArray(r) ? r : [r])])]); setRes(null); }
@@ -156,7 +142,7 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
     setCorriendo(true); setRes(null); setErr(""); setProg({ actual: 0, total: entradas.length, archivo: "" });
     registrar("info", `Lote «${perfil.nombre}»: ${entradas.length} archivo(s) → ${salida}`);
     try {
-      const r = await invoke<ResultadoLote[]>("ejecutar_lote", { entradas, base: carpetaOrigen, carpetaSalida: salida, sufijo, pasos: perfil.pasos.map((p) => aBackend(p, clave)) });
+      const r = await invoke<ResultadoLote[]>("ejecutar_lote", { entradas, base: carpetaOrigen, carpetaSalida: salida, sufijo, pasos: perfil.pasos.map((p) => aBackend(p)) });
       setRes(r);
       for (const x of r) registrar(x.ok ? "ok" : "err", x.ok ? `Generado: ${x.salida}` : `${nombreArchivo(x.entrada)}: ${x.error}`);
       const ultima = [...r].reverse().find((x) => x.ok);
@@ -222,7 +208,6 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
                   <label>Formato<select value={p.formato} onChange={(e) => setPaso(i, { ...p, formato: e.target.value })} disabled={!p.numOn}><option value="Página {n} de {total}">Página 1 de 10</option><option value="{n} / {total}">1 / 10</option><option value="{n}">1</option></select></label>
                   <label>Posición<select value={p.posicion} onChange={(e) => setPaso(i, { ...p, posicion: e.target.value })} disabled={!p.numOn}><option value="pie-derecha">Pie · derecha</option><option value="pie-centro">Pie · centro</option><option value="cab-derecha">Cabecera · derecha</option></select></label></div>}
                 {p.tipo === "metadatos" && <label className="ed-check"><input type="checkbox" checked={p.completo} onChange={(e) => setPaso(i, { ...p, completo: e.target.checked })} /> Limpieza completa (datos, XMP, adjuntos y JavaScript)</label>}
-                {p.tipo === "firmar" && <small>{firmaCfg ? `Usa el certificado y la posición elegidos en la herramienta Firmar (certificado: ${String(firmaCfg.cert_id).slice(0, 12)}…).` : "Primero elige un certificado en la herramienta Firmar."}</small>}
                 {p.tipo === "ocr" && <small>Idioma: español. Requiere Tesseract en la carpeta UTILS.</small>}
                 {p.tipo === "imprimir" && <div className="ed-rejilla">
                   <label>Impresora<select value={p.impresora} onChange={(e) => setPaso(i, { ...p, impresora: e.target.value })}>
@@ -241,7 +226,6 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
             {perfil.pasos.length === 0 && <li><small>Este perfil no tiene pasos. Añade el primero:</small></li>}
           </ol>
           <div className="ed-fila"><select value="" onChange={(e) => { if (e.target.value) anadir(e.target.value as PasoUI["tipo"]); }} disabled={corriendo} aria-label="Añadir paso"><option value="">＋ Añadir paso…</option>{(Object.keys(NOMBRE_PASO) as PasoUI["tipo"][]).map((t) => <option key={t} value={t} disabled={t === "convertir" && conConvertir}>{NOMBRE_PASO[t]}{t === "convertir" ? " (va siempre el primero)" : ""}</option>)}</select></div>
-          {firmaMal && <div className="firma-error">La firma debe ser el último paso que modifica el PDF (cualquier cambio posterior la invalidaría). Después solo puede ir «Imprimir».</div>}
         </div>
       </details>
 
@@ -251,7 +235,6 @@ export default function LotesPdf({ alGenerar, registrar, zona }: PropsHerramient
           <div className="ed-fila"><input type="text" value={salida} onChange={(e) => { salidaManual.current = true; setSalida(e.target.value); }} placeholder="Carpeta de salida" disabled={corriendo} /><button className="secundario" onClick={elegirSalida} disabled={corriendo}>Cambiar…</button></div>
           <label>Añadir al nombre (opcional)<input type="text" value={sufijo} onChange={(e) => setSufijo(e.target.value)} placeholder="_proc" disabled={corriendo} /></label>
           <small>Los originales no se tocan. Si ya existe un archivo con ese nombre, se añade «(2)».</small>
-          {necesitaClave && <label>Contraseña del certificado .pfx<input type="password" value={clave} onChange={(e) => setClave(e.target.value)} autoComplete="off" /></label>}
         </div>
       </details>
 

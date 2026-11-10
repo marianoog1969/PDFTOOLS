@@ -1,8 +1,8 @@
-PDF Tool v3.11.1
+PDF Tool v3.12.0
 ================
 Servicio de Informatica - CIS Guillermo Miranda - Murcia
 
-Ver, organizar, anotar, firmar, combinar, comprimir, OCR, imprimir,
+Ver, organizar, anotar, combinar, comprimir, OCR, imprimir,
 convertir Word/Excel/PowerPoint a PDF y procesar PDF por lotes, sin conexion a internet. Los originales no se
 modifican: cada operacion crea un archivo nuevo.
 
@@ -27,7 +27,7 @@ La carpeta UTILS tambien puede estar en la red: P:\APPS\PDFTOOLS\UTILS
 
 Que necesita cada componente:
   - Ghostscript: ver paginas, comprimir, OCR, extraer, dividir e imprimir
-    (respaldo). Combinar, firmar, marca de agua, formularios y metadatos
+    (respaldo). Combinar, marca de agua, formularios y metadatos
     funcionan sin el, pero sin vista previa de las paginas.
   - Tesseract: solo OCR.
   - SumatraPDF: opcional; la impresion funciona sin el.
